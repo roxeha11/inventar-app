@@ -1792,4 +1792,3 @@ if hat_recht("benutzerverwaltung"):
                 st.rerun()
 
 st.markdown("---")
-st.markdown("🤖 **EVA** – Inventarisierungs-App | Erstellt mit Python & Streamlit")
