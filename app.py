@@ -151,7 +151,85 @@ def get_erlaubte_raeume():
         return st.session_state.raeume
     return [r for r in st.session_state.raeume if r in erlaubte]
 
-DEFAULT_KATEGORIEN = ["Elektronik", "Möbel", "Bürobedarf", "Werkzeug", "Sonstiges"]
+DEFAULT_KATEGORIEN = ["Elektronik", "Möbel", "Bürobedarf", "Werkzeug", "Film", "Musik", "Buch", "Spiel", "Sonstiges"]
+
+# =============================================
+# KATEGORIE-SPEZIFISCHE ZUSATZFELDER
+# =============================================
+
+KATEGORIE_FELDER = {
+    "Film": [
+        {"key": "genre",         "label": "Genre",          "typ": "select",
+         "optionen": ["Action", "Komödie", "Drama", "Horror", "Science-Fiction", "Fantasy", "Thriller", "Dokumentation", "Animation", "Romance", "Krimi", "Abenteuer", "Sonstiges"]},
+        {"key": "altersfreigabe", "label": "Altersfreigabe",  "typ": "select",
+         "optionen": ["Ohne Altersbeschränkung", "Ab 6", "Ab 12", "Ab 16", "Ab 18"]},
+        {"key": "regisseur",     "label": "Regisseur",       "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "format",        "label": "Format",          "typ": "select",
+         "optionen": ["DVD", "Blu-ray", "4K UHD", "VHS", "Digital", "Sonstiges"]},
+    ],
+    "Musik": [
+        {"key": "genre",         "label": "Genre",          "typ": "select",
+         "optionen": ["Pop", "Rock", "Hip-Hop", "Jazz", "Klassik", "Electronic", "Metal", "Country", "R&B", "Sonstiges"]},
+        {"key": "kuenstler",     "label": "Künstler / Band", "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "format",        "label": "Format",          "typ": "select",
+         "optionen": ["CD", "Vinyl", "Kassette", "Digital", "Sonstiges"]},
+    ],
+    "Buch": [
+        {"key": "genre",         "label": "Genre",          "typ": "select",
+         "optionen": ["Roman", "Sachbuch", "Krimi", "Fantasy", "Science-Fiction", "Biografie", "Kinderbuch", "Manga", "Comic", "Ratgeber", "Sonstiges"]},
+        {"key": "autor",         "label": "Autor",           "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "isbn",          "label": "ISBN",            "typ": "text"},
+        {"key": "altersempfehlung", "label": "Altersempfehlung", "typ": "select",
+         "optionen": ["Alle Altersgruppen", "Ab 6", "Ab 10", "Ab 12", "Ab 16", "Ab 18", "Erwachsene"]},
+    ],
+    "Spiel": [
+        {"key": "genre",         "label": "Genre",          "typ": "select",
+         "optionen": ["Brettspiel", "Kartenspiel", "Videospiel", "Rollenspiel", "Puzzle", "Würfelspiel", "Partyspiel", "Sonstiges"]},
+        {"key": "altersfreigabe", "label": "Altersfreigabe",  "typ": "select",
+         "optionen": ["Ohne Altersbeschränkung", "Ab 6", "Ab 12", "Ab 16", "Ab 18"]},
+        {"key": "spieler_anzahl", "label": "Spieleranzahl",   "typ": "text",
+         "placeholder": "z.B. 2–4"},
+        {"key": "hersteller",    "label": "Hersteller",      "typ": "text"},
+    ],
+    "Elektronik": [
+        {"key": "hersteller",    "label": "Hersteller / Marke", "typ": "text"},
+        {"key": "modell",        "label": "Modell",           "typ": "text"},
+        {"key": "zustand",       "label": "Zustand",          "typ": "select",
+         "optionen": ["Neu", "Wie neu", "Gut", "Akzeptabel", "Defekt"]},
+    ],
+    "Werkzeug": [
+        {"key": "hersteller",    "label": "Hersteller / Marke", "typ": "text"},
+        {"key": "zustand",       "label": "Zustand",          "typ": "select",
+         "optionen": ["Neu", "Wie neu", "Gut", "Akzeptabel", "Defekt"]},
+    ],
+}
+
+def render_zusatzfelder(kategorie, prefix="neu", bestehende_werte=None):
+    """Rendert die kategoriespezifischen Zusatzfelder und gibt die Werte zurück."""
+    felder = KATEGORIE_FELDER.get(kategorie, [])
+    if not felder:
+        return {}
+    werte = {}
+    if bestehende_werte is None:
+        bestehende_werte = {}
+    st.markdown(f"**📋 Zusatzfelder für Kategorie '{kategorie}':**")
+    cols = st.columns(2)
+    for i, feld in enumerate(felder):
+        with cols[i % 2]:
+            key = f"{prefix}_{feld['key']}"
+            aktuell = bestehende_werte.get(feld["key"], "")
+            if feld["typ"] == "select":
+                optionen = feld["optionen"]
+                idx = optionen.index(aktuell) if aktuell in optionen else 0
+                werte[feld["key"]] = st.selectbox(feld["label"], optionen, index=idx, key=key)
+            else:
+                placeholder = feld.get("placeholder", "")
+                werte[feld["key"]] = st.text_input(feld["label"], value=aktuell,
+                                                    placeholder=placeholder, key=key)
+    return werte
 
 def load_json(file, default):
     if os.path.exists(file):
@@ -537,6 +615,8 @@ with st.sidebar:
     barcode_nr = st.text_input("Barcode-Nr. (optional)", placeholder="z.B. 4012345678901")
     notiz = st.text_area("Notiz (optional)")
 
+    zusatz_werte = render_zusatzfelder(kategorie, prefix="neu")
+
     if st.button("✅ Artikel hinzufügen"):
         if name.strip() == "":
             st.error("Bitte einen Artikelnamen eingeben!")
@@ -554,6 +634,7 @@ with st.sidebar:
                 "preis": round(preis, 2),
                 "barcode": barcode_nr.strip(),
                 "notiz": notiz.strip(),
+                "zusatz": zusatz_werte,
                 "datum": datetime.now().strftime("%d.%m.%Y %H:%M")
             }
             st.session_state.inventar.append(neuer_artikel)
@@ -603,6 +684,8 @@ if st.session_state.detail_artikel_id is not None:
                             if artikel_detail["raum"] in st.session_state.raeume else 0)
                         edit_barcode = st.text_input("Barcode", value=artikel_detail.get("barcode", "") or "")
                         edit_notiz_f = st.text_area("Notiz", value=artikel_detail.get("notiz", "") or "")
+                        edit_zusatz = render_zusatzfelder(edit_kat, prefix=f"edit_{artikel_detail['id']}",
+                                                         bestehende_werte=artikel_detail.get("zusatz", {}))
                         col_s, col_ab = st.columns(2)
                         with col_s:
                             speichern = st.form_submit_button("💾 Speichern", type="primary", use_container_width=True)
@@ -624,6 +707,7 @@ if st.session_state.detail_artikel_id is not None:
                                     a["raum"] = edit_raum
                                     a["barcode"] = edit_barcode.strip()
                                     a["notiz"] = edit_notiz_f.strip()
+                                    a["zusatz"] = edit_zusatz
                                     break
                             save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
                             st.session_state.edit_artikel_id = None
@@ -646,6 +730,17 @@ if st.session_state.detail_artikel_id is not None:
                         status = "🔴 Ausgeliehen"
                     else:
                         status = f"⚠️ Teils verfügbar ({verfuegbar}/{artikel_detail['menge']})"
+
+                    # Zusatzfelder anzeigen
+                    zusatz = artikel_detail.get("zusatz", {})
+                    felder_def = KATEGORIE_FELDER.get(artikel_detail["kategorie"], [])
+                    if zusatz and felder_def:
+                        st.markdown("**📋 Kategorie-Details:**")
+                        zusatz_cols = st.columns(3)
+                        for zi, fd in enumerate(felder_def):
+                            wert = zusatz.get(fd["key"], "–") or "–"
+                            zusatz_cols[zi % 3].metric(fd["label"], wert)
+                        st.divider()
 
                     st.markdown(f"""
 | Feld | Wert |
@@ -725,6 +820,24 @@ with tabs[tab_index["📋 Inventar"]]:
     with col3:
         filter_status = st.selectbox("Status filtern", ["Alle", "✅ Verfügbar", "🔴 Ausgeliehen"])
 
+    # Dynamischer Zusatzfeld-Filter (nur wenn Kategorie mit Feldern gewählt)
+    filter_zusatz = {}
+    if filter_kategorie != "Alle" and filter_kategorie in KATEGORIE_FELDER:
+        zusatz_felder_def = KATEGORIE_FELDER[filter_kategorie]
+        select_felder = [f for f in zusatz_felder_def if f["typ"] == "select"]
+        if select_felder:
+            st.markdown(f"**🔍 Zusatzfilter für '{filter_kategorie}':**")
+            zusatz_filter_cols = st.columns(len(select_felder))
+            for zi, fd in enumerate(select_felder):
+                with zusatz_filter_cols[zi]:
+                    auswahl = st.selectbox(
+                        fd["label"],
+                        ["Alle"] + fd["optionen"],
+                        key=f"filter_zusatz_{fd['key']}"
+                    )
+                    if auswahl != "Alle":
+                        filter_zusatz[fd["key"]] = auswahl
+
     raum_inventar = [a for a in st.session_state.inventar
                      if a["raum"] == st.session_state.aktiver_raum and hat_raum_zugriff(a["raum"])]
 
@@ -732,6 +845,9 @@ with tabs[tab_index["📋 Inventar"]]:
         raum_inventar = [a for a in raum_inventar if suche.lower() in a["name"].lower()]
     if filter_kategorie != "Alle":
         raum_inventar = [a for a in raum_inventar if a["kategorie"] == filter_kategorie]
+    # Zusatzfeld-Filter anwenden
+    for fkey, fwert in filter_zusatz.items():
+        raum_inventar = [a for a in raum_inventar if a.get("zusatz", {}).get(fkey, "") == fwert]
     if filter_status == "✅ Verfügbar":
         raum_inventar = [a for a in raum_inventar if a.get("verfuegbar", a["menge"]) > 0]
     elif filter_status == "🔴 Ausgeliehen":
@@ -762,6 +878,17 @@ with tabs[tab_index["📋 Inventar"]]:
                         st.markdown(f"**{a['name']}** {status_icon}")
                         st.caption(f"📂 {a['kategorie']} | 🏠 {a['raum']}")
                         st.caption(f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
+                        # Zusatzinfos auf der Karte anzeigen
+                        zusatz_karte = a.get("zusatz", {})
+                        felder_karte = KATEGORIE_FELDER.get(a["kategorie"], [])
+                        if zusatz_karte and felder_karte:
+                            kurzinfo = " | ".join(
+                                f"{fd['label']}: {zusatz_karte[fd['key']]}"
+                                for fd in felder_karte[:2]
+                                if zusatz_karte.get(fd["key"])
+                            )
+                            if kurzinfo:
+                                st.caption(f"📋 {kurzinfo}")
 
                         col_det, col_ed = st.columns(2)
                         with col_det:
