@@ -1396,10 +1396,49 @@ if hat_recht("export"):
             st.markdown("### 📥 Artikel aus Excel oder CSV importieren")
 
             st.markdown("#### 1️⃣ Vorlage herunterladen")
-            vorlage_df = pd.DataFrame(columns=[
+                        # Alle Zusatzfelder aus allen Kategorien sammeln
+            alle_zusatz_spalten = []
+            for felder in KATEGORIE_FELDER.values():
+                for feld in felder:
+                    if feld["key"] not in alle_zusatz_spalten:
+                        alle_zusatz_spalten.append(feld["key"])
+
+            vorlage_spalten = [
                 "name", "kategorie", "menge", "preis",
                 "raum", "barcode", "notiz", "mindestmenge"
-            ])
+            ] + alle_zusatz_spalten
+
+            vorlage_df = pd.DataFrame(columns=vorlage_spalten)
+
+            # Hilfstabelle mit erlaubten Werten pro Spalte
+            hilfe_data = {"Spalte": [], "Beschreibung / Erlaubte Werte": []}
+            basis_felder = {
+                "name": "Pflichtfeld – Name des Artikels",
+                "kategorie": "z.B. " + ", ".join(KATEGORIE_FELDER.keys()),
+                "menge": "Pflichtfeld – Ganzzahl (z.B. 5)",
+                "preis": "Preis in Euro (z.B. 9.99)",
+                "raum": "Raumname (z.B. Raum 1)",
+                "barcode": "Barcode-Nummer (optional)",
+                "notiz": "Freitext (optional)",
+                "mindestmenge": "Ganzzahl (optional)",
+            }
+            for sp, beschr in basis_felder.items():
+                hilfe_data["Spalte"].append(sp)
+                hilfe_data["Beschreibung / Erlaubte Werte"].append(beschr)
+
+            for kat, felder in KATEGORIE_FELDER.items():
+                for feld in felder:
+                    if feld["key"] in alle_zusatz_spalten:
+                        if feld["typ"] == "select":
+                            werte = ", ".join(feld["optionen"])
+                            beschr = f"[{kat}] Erlaubte Werte: {werte}"
+                        else:
+                            beschr = f"[{kat}] Freitext – {feld['label']}"
+                        hilfe_data["Spalte"].append(feld["key"])
+                        hilfe_data["Beschreibung / Erlaubte Werte"].append(beschr)
+
+            hilfe_df = pd.DataFrame(hilfe_data)
+
             vl1, vl2 = st.columns(2)
             with vl1:
                 if XLSX_AVAILABLE:
