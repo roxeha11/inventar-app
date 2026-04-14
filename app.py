@@ -7,7 +7,7 @@ import io
 import base64
 from PIL import Image
 from datetime import datetime
-quagga = None
+from streamlit_quagga import quagga
 
 # Dateien
 DATA_FILE = "inventar.json"
