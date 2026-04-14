@@ -7,7 +7,14 @@ import io
 import base64
 from PIL import Image
 from datetime import datetime
-from streamlit_quagga import quagga
+# Barcode-Scanner (nur lokal verfügbar)
+try:
+    from streamlit_quagga import quagga
+    QUAGGA_AVAILABLE = True
+except ImportError:
+    quagga = None
+    QUAGGA_AVAILABLE = False
+
 
 # Dateien
 DATA_FILE = "inventar.json"
