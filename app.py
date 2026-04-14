@@ -1094,7 +1094,17 @@ if hat_recht("export"):
                     if upload_file.name.endswith(".xlsx"):
                         df_import = pd.read_excel(upload_file, dtype=str)
                     else:
-                        df_import = pd.read_csv(upload_file, sep=None, engine="python", dtype=str)
+                        raw = upload_file.read()
+                    df_import = None
+                    for enc in ["utf-8-sig", "utf-8", "latin-1", "cp1252", "iso-8859-1"]:
+                        try:
+                            df_import = pd.read_csv(io.BytesIO(raw), sep=None, engine="python", dtype=str, encoding=enc)
+                            break
+                        except (UnicodeDecodeError, Exception):
+                            continue
+                    if df_import is None:
+                        st.error("Datei konnte mit keinem bekannten Encoding gelesen werden. Bitte als UTF-8 speichern.")
+                        st.stop()
 
                     df_import.columns = [c.strip().lower() for c in df_import.columns]
                     df_import = df_import.fillna("")
