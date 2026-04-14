@@ -1233,14 +1233,15 @@ if hat_recht("checkout"):
                 })
                 st.dataframe(df_hist, use_container_width=True, hide_index=True)
                 csv_hist = df_hist.to_csv(index=False, sep=";", encoding="utf-8-sig")
-                st.download_button("📥 Historie als CSV", csv_hist,
+                               st.download_button("📥 Historie als CSV", csv_hist,
                                    "ausleihhistorie.csv", "text/csv")
 
-                  st.divider()
-                  st.markdown("#### 🗑️ Einträge löschen")
+                st.divider()
+                st.markdown("#### 🗑️ Einträge löschen")
 
-                  with st.expander("🗑️ Einzelne Einträge löschen"):
-                      losch_labels = {
+                with st.expander("🗑️ Einzelne Einträge löschen"):
+                    losch_labels = {
+
                           f"{a['checkout_datum']} | {a['artikel_name']} → {a['person']} [{a['status']}]": a["ausleihe_id"]
                           for a in hist
                       }
