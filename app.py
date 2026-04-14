@@ -1632,11 +1632,11 @@ if hat_recht("benutzerverwaltung"):
                         key="edit_rolle"
                     )
                 with em2:
-                    akt_raeume  = mitglieder_info.get(edit_m, {}).get("erlaubte_raeume", [])
+                    akt_raeume  = [r for r in mitglieder_info.get(edit_m, {}).get("erlaubte_raeume", []) if r in st.session_state.raeume]
                     neue_raeume = st.multiselect(
                         "Erlaubte Räume (leer = alle)",
-                        st.session_state.raeume,
-                        default=akt_raeume,
+                          st.session_state.raeume,
+                          default=[r for r in akt_raeume if r in st.session_state.raeume],
                         key="edit_raeume"
                     )
                 if st.button("💾 Änderungen speichern", key="btn_edit_mitglied"):
