@@ -1474,7 +1474,15 @@ if hat_recht("benutzerverwaltung"):
         with bv1:
             st.markdown("### 👥 Mitglieder dieses Workspaces")
             users            = load_users()
-            mitglieder       = ws_aktuell.get("mitglieder", [])
+            # FIX 1: Duplikate automatisch bereinigen
+              mitglieder_raw = ws_aktuell.get("mitglieder", [])
+              mitglieder = list(dict.fromkeys(mitglieder_raw))
+              if len(mitglieder) != len(mitglieder_raw):
+                  _fix = load_workspaces()
+                  _i = next((i for i, w in enumerate(_fix) if w["id"] == ws_aktuell["id"]), None)
+                  if _i is not None:
+                      _fix[_i]["mitglieder"] = mitglieder
+                      save_workspaces(_fix)
             mitglieder_rollen = ws_aktuell.get("mitglieder_rollen", {})
             mitglieder_info  = ws_aktuell.get("mitglieder_info", {})
 
@@ -1502,7 +1510,10 @@ if hat_recht("benutzerverwaltung"):
                 st.markdown("#### ❌ Mitglied entfernen")
                 entf_aus = st.selectbox("Mitglied", mitglieder, key="entfernen_auswahl")
                 if st.button("Mitglied entfernen", key="btn_entfernen"):
-                    all_ws[ws_idx]["mitglieder"].remove(entf_aus)
+                    # FIX 2: Sicheres Entfernen ohne ValueError
+                      all_ws[ws_idx]["mitglieder"] = [
+                          m for m in all_ws[ws_idx]["mitglieder"] if m != entf_aus
+                      ]
                     all_ws[ws_idx].get("mitglieder_rollen", {}).pop(entf_aus, None)
                     all_ws[ws_idx].get("mitglieder_info",   {}).pop(entf_aus, None)
                     save_workspaces(all_ws)
@@ -1564,16 +1575,22 @@ if hat_recht("benutzerverwaltung"):
                     "Erlaubte Räume (leer = alle)",
                     st.session_state.raeume, key="direkt_raeume"
                 )
-                if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
-                    all_ws[ws_idx].setdefault("mitglieder", []).append(
-                        dh_user["benutzername"])
-                    all_ws[ws_idx].setdefault("mitglieder_rollen", {})[
-                        dh_user["benutzername"]] = dh_rolle
-                    all_ws[ws_idx].setdefault("mitglieder_info", {})[
-                        dh_user["benutzername"]] = {"erlaubte_raeume": dh_raeume}
-                    save_workspaces(all_ws)
-                    st.success(f"'{dh_user['name']}' wurde hinzugefügt!")
-                    st.rerun()
+               # NEU:
+if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
+    # FIX 3: Doppeltes Hinzufügen verhindern
+    if dh_user["benutzername"] not in all_ws[ws_idx].get("mitglieder", []):
+        all_ws[ws_idx].setdefault("mitglieder", []).append(
+            dh_user["benutzername"])
+        all_ws[ws_idx].setdefault("mitglieder_rollen", {})[
+            dh_user["benutzername"]] = dh_rolle
+        all_ws[ws_idx].setdefault("mitglieder_info", {})[
+            dh_user["benutzername"]] = {"erlaubte_raeume": dh_raeume}
+        save_workspaces(all_ws)
+        st.success(f"'{dh_user['name']}' wurde hinzugefügt!")
+        st.rerun()
+    else:
+        st.warning("⚠️ Benutzer ist bereits Mitglied!")
+
             else:
                 st.info("Alle registrierten Benutzer sind bereits Mitglied.")
 
