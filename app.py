@@ -1445,7 +1445,9 @@ if hat_recht("export"):
                     vl_buf = io.BytesIO()
                     with pd.ExcelWriter(vl_buf, engine="openpyxl") as writer:
                         vorlage_df.to_excel(writer, index=False, sheet_name="Inventar")
+                        hilfe_df.to_excel(writer, index=False, sheet_name="Hilfe & Werte")
                     vl_buf.seek(0)
+
                     st.download_button(
                         "📊 Excel-Vorlage", data=vl_buf,
                         file_name="inventar_vorlage.xlsx",
