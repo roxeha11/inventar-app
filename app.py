@@ -777,7 +777,10 @@ tab_index = {name: i for i, name in enumerate(tab_namen)}
 with tabs[tab_index["📋 Inventar"]]:
     st.subheader(f"📋 Inventar – {st.session_state.aktiver_raum}")
 
-    fc1, fc2, fc3, fc4 = st.columns(4)
+    ansicht_col, fc1, fc2, fc3, fc4 = st.columns([1, 2, 2, 2, 2])
+    with ansicht_col:
+        ansicht = st.radio("Ansicht", ["🔲 Kacheln", "📄 Tabelle"], horizontal=True,
+                           label_visibility="collapsed", key="inventar_ansicht")
     with fc1:
         suche = st.text_input("🔍 Artikel suchen", placeholder="z.B. Laptop...")
     with fc2:
@@ -841,50 +844,89 @@ with tabs[tab_index["📋 Inventar"]]:
 
     if raum_inventar:
         st.markdown(f"**{len(raum_inventar)} Artikel gefunden**")
-        cols_per_row = 3
-        for i in range(0, len(raum_inventar), cols_per_row):
-            cols = st.columns(cols_per_row)
-            for j, a in enumerate(raum_inventar[i:i + cols_per_row]):
-                with cols[j]:
-                    with st.container(border=True):
-                        img_path = get_ws_image_path(a["id"])
-                        if img_path:
-                            st.image(img_path, use_container_width=True)
-                        else:
-                            st.markdown("🖼️ *Kein Bild*")
 
-                        verfuegbar = a.get("verfuegbar", a["menge"])
-                        s_icon = ("✅" if verfuegbar == a["menge"]
-                                  else ("🔴" if verfuegbar == 0 else "⚠️"))
-                        st.markdown(f"**{a['name']}** {s_icon}")
-                        st.caption(f"📂 {a['kategorie']} | 🏠 {a['raum']}")
-                        st.caption(
-                            f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
+        if ansicht == "📄 Tabelle":
+            # ── TABELLENANSICHT ──────────────────────────────────────────
+            tbl_data = []
+            for a in raum_inventar:
+                verfuegbar = a.get("verfuegbar", a["menge"])
+                if verfuegbar == a["menge"]:
+                    status_txt = "✅ Verfügbar"
+                elif verfuegbar == 0:
+                    status_txt = "🔴 Ausgeliehen"
+                else:
+                    status_txt = f"⚠️ Teils ({verfuegbar}/{a['menge']})"
+                tbl_data.append({
+                    "#":          a.get("laufnummer", "–"),
+                    "Name":       a["name"],
+                    "Kategorie":  a["kategorie"],
+                    "Raum":       a["raum"],
+                    "Menge":      a["menge"],
+                    "Verfügbar":  verfuegbar,
+                    "Status":     status_txt,
+                    "Preis (€)":  f"{a['preis']:.2f}",
+                    "Gesamtwert": f"{a['preis'] * a['menge']:.2f} €",
+                    "Datum":      a.get("datum", "–"),
+                })
+            df_tbl = pd.DataFrame(tbl_data)
+            sel = st.dataframe(
+                df_tbl, use_container_width=True, hide_index=True,
+                on_select="rerun", selection_mode="single-row"
+            )
+            # Klick auf Zeile öffnet Detailansicht
+            rows = sel.selection.get("rows", []) if hasattr(sel, "selection") else []
+            if rows:
+                geklickt_id = raum_inventar[rows[0]]["id"]
+                st.session_state.detail_artikel_id = geklickt_id
+                st.session_state.edit_artikel_id   = None
+                st.rerun()
 
-                        z_karte = a.get("zusatz", {})
-                        f_karte = KATEGORIE_FELDER.get(a["kategorie"], [])
-                        if z_karte and f_karte:
-                            kurzinfo = " | ".join(
-                                f"{fd['label']}: {z_karte[fd['key']]}"
-                                for fd in f_karte[:2]
-                                if z_karte.get(fd["key"])
-                            )
-                            if kurzinfo:
-                                st.caption(f"📋 {kurzinfo}")
+        else:
+            # ── KACHELANSICHT ────────────────────────────────────────────
+            cols_per_row = 3
+            for i in range(0, len(raum_inventar), cols_per_row):
+                cols = st.columns(cols_per_row)
+                for j, a in enumerate(raum_inventar[i:i + cols_per_row]):
+                    with cols[j]:
+                        with st.container(border=True):
+                            img_path = get_ws_image_path(a["id"])
+                            if img_path:
+                                st.image(img_path, use_container_width=True)
+                            else:
+                                st.markdown("🖼️ *Kein Bild*")
 
-                        cd1, cd2 = st.columns(2)
-                        with cd1:
-                            if st.button("🔍 Details", key=f"detail_{a['id']}",
-                                         use_container_width=True):
-                                st.session_state.detail_artikel_id = a["id"]
-                                st.session_state.edit_artikel_id   = None
-                                st.rerun()
-                        with cd2:
-                            if st.button("✏️ Bearbeiten", key=f"quickedit_{a['id']}",
-                                         use_container_width=True):
-                                st.session_state.detail_artikel_id = a["id"]
-                                st.session_state.edit_artikel_id   = a["id"]
-                                st.rerun()
+                            verfuegbar = a.get("verfuegbar", a["menge"])
+                            s_icon = ("✅" if verfuegbar == a["menge"]
+                                      else ("🔴" if verfuegbar == 0 else "⚠️"))
+                            st.markdown(f"**{a['name']}** {s_icon}")
+                            st.caption(f"📂 {a['kategorie']} | 🏠 {a['raum']}")
+                            st.caption(
+                                f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
+
+                            z_karte = a.get("zusatz", {})
+                            f_karte = KATEGORIE_FELDER.get(a["kategorie"], [])
+                            if z_karte and f_karte:
+                                kurzinfo = " | ".join(
+                                    f"{fd['label']}: {z_karte[fd['key']]}"
+                                    for fd in f_karte[:2]
+                                    if z_karte.get(fd["key"])
+                                )
+                                if kurzinfo:
+                                    st.caption(f"📋 {kurzinfo}")
+
+                            cd1, cd2 = st.columns(2)
+                            with cd1:
+                                if st.button("🔍 Details", key=f"detail_{a['id']}",
+                                             use_container_width=True):
+                                    st.session_state.detail_artikel_id = a["id"]
+                                    st.session_state.edit_artikel_id   = None
+                                    st.rerun()
+                            with cd2:
+                                if st.button("✏️ Bearbeiten", key=f"quickedit_{a['id']}",
+                                             use_container_width=True):
+                                    st.session_state.detail_artikel_id = a["id"]
+                                    st.session_state.edit_artikel_id   = a["id"]
+                                    st.rerun()
     else:
         st.info(f"Keine Artikel in Raum '{st.session_state.aktiver_raum}' gefunden.")
 
@@ -1705,4 +1747,4 @@ if hat_recht("benutzerverwaltung"):
                 st.rerun()
 
 st.markdown("---")
-
+st.markdown("🤖 **EVA** – Inventarisierungs-App | Erstellt mit Python & Streamlit")
