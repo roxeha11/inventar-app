@@ -23,9 +23,9 @@ except ImportError:
     QUAGGA_AVAILABLE = False
 
 # Dateipfade
-USERS_FILE     = "benutzer.json"
+USERS_FILE      = "benutzer.json"
 WORKSPACES_FILE = "workspaces.json"
-IMAGES_DIR     = "artikel_bilder"
+IMAGES_DIR      = "artikel_bilder"
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 DEFAULT_KATEGORIEN = [
@@ -44,28 +44,28 @@ KATEGORIE_FELDER = {
                       "Romance", "Krimi", "Abenteuer", "Sonstiges"]},
         {"key": "altersfreigabe", "label": "Altersfreigabe", "typ": "select",
          "optionen": ["Ohne Altersbeschränkung", "Ab 6", "Ab 12", "Ab 16", "Ab 18"]},
-        {"key": "regisseur",       "label": "Regisseur",        "typ": "text"},
-        {"key": "erscheinungsjahr","label": "Erscheinungsjahr", "typ": "text"},
-        {"key": "format",          "label": "Format",           "typ": "select",
+        {"key": "regisseur",        "label": "Regisseur",        "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "format",           "label": "Format",           "typ": "select",
          "optionen": ["DVD", "Blu-ray", "4K UHD", "VHS", "Digital", "Sonstiges"]},
     ],
     "Musik": [
         {"key": "genre", "label": "Genre", "typ": "select",
          "optionen": ["Pop", "Rock", "Hip-Hop", "Jazz", "Klassik",
                       "Electronic", "Metal", "Country", "R&B", "Sonstiges"]},
-        {"key": "kuenstler",       "label": "Künstler / Band",  "typ": "text"},
-        {"key": "erscheinungsjahr","label": "Erscheinungsjahr", "typ": "text"},
-        {"key": "format",          "label": "Format",           "typ": "select",
+        {"key": "kuenstler",        "label": "Künstler / Band",  "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "format",           "label": "Format",           "typ": "select",
          "optionen": ["CD", "Vinyl", "Kassette", "Digital", "Sonstiges"]},
     ],
     "Buch": [
         {"key": "genre", "label": "Genre", "typ": "select",
          "optionen": ["Roman", "Sachbuch", "Krimi", "Fantasy", "Science-Fiction",
                       "Biografie", "Kinderbuch", "Manga", "Comic", "Ratgeber", "Sonstiges"]},
-        {"key": "autor",           "label": "Autor",            "typ": "text"},
-        {"key": "erscheinungsjahr","label": "Erscheinungsjahr", "typ": "text"},
-        {"key": "isbn",            "label": "ISBN",             "typ": "text"},
-        {"key": "altersempfehlung","label": "Altersempfehlung", "typ": "select",
+        {"key": "autor",            "label": "Autor",            "typ": "text"},
+        {"key": "erscheinungsjahr", "label": "Erscheinungsjahr", "typ": "text"},
+        {"key": "isbn",             "label": "ISBN",             "typ": "text"},
+        {"key": "altersempfehlung", "label": "Altersempfehlung", "typ": "select",
          "optionen": ["Alle Altersgruppen", "Ab 6", "Ab 10", "Ab 12", "Ab 16", "Ab 18", "Erwachsene"]},
     ],
     "Spiel": [
@@ -90,9 +90,9 @@ KATEGORIE_FELDER = {
          "optionen": ["Neu", "Wie neu", "Gut", "Akzeptabel", "Defekt"]},
     ],
     "Möbel": [
-        {"key": "material",  "label": "Material",  "typ": "text"},
-        {"key": "farbe",     "label": "Farbe",     "typ": "text"},
-        {"key": "zustand",   "label": "Zustand",   "typ": "select",
+        {"key": "material", "label": "Material", "typ": "text"},
+        {"key": "farbe",    "label": "Farbe",    "typ": "text"},
+        {"key": "zustand",  "label": "Zustand",  "typ": "select",
          "optionen": ["Neu", "Wie neu", "Gut", "Akzeptabel", "Defekt"]},
     ],
     "Bürobedarf": [
@@ -139,7 +139,7 @@ def get_user_workspaces(benutzername):
             if w["besitzer"] == benutzername or benutzername in w.get("mitglieder", [])]
 
 def get_ws_data_files(ws_id):
-    ws_dir = os.path.join("workspaces", ws_id)
+    ws_dir     = os.path.join("workspaces", ws_id)
     bilder_dir = os.path.join(ws_dir, "bilder")
     os.makedirs(bilder_dir, exist_ok=True)
     return {
@@ -157,7 +157,7 @@ def init_workspace_data(ws_id):
     st.session_state.kategorien = load_json(files["kategorien"], DEFAULT_KATEGORIEN)
     st.session_state.ausleihen  = load_json(files["ausleihen"],  [])
     st.session_state.ws_files   = files
-    erlaubte = st.session_state.get("erlaubte_raeume", [])
+    erlaubte    = st.session_state.get("erlaubte_raeume", [])
     verfuegbare = [r for r in st.session_state.raeume if not erlaubte or r in erlaubte]
     st.session_state.aktiver_raum = verfuegbare[0] if verfuegbare else None
 
@@ -230,37 +230,19 @@ def get_erlaubte_raeume():
         return st.session_state.raeume
     return [r for r in st.session_state.raeume if r in erlaubte]
 
-# Zusatzfelder rendern (Hauptbereich – mit st.columns)
-def render_zusatzfelder_main(kategorie, prefix="neu", bestehende_werte=None):
-    felder = KATEGORIE_FELDER.get(kategorie, [])
-    if not felder:
-        return {}
-    if bestehende_werte is None:
-        bestehende_werte = {}
-    werte = {}
-    st.markdown(f"**📋 Zusatzfelder – {kategorie}:**")
-    cols = st.columns(2)
-    for i, feld in enumerate(felder):
-        with cols[i % 2]:
-            key     = f"{prefix}_{feld['key']}"
-            aktuell = bestehende_werte.get(feld["key"], "")
-            if feld["typ"] == "select":
-                optionen = feld["optionen"]
-                idx      = optionen.index(aktuell) if aktuell in optionen else 0
-                werte[feld["key"]] = st.selectbox(feld["label"], optionen, index=idx, key=key)
-            else:
-                werte[feld["key"]] = st.text_input(
-                    feld["label"], value=aktuell,
-                    placeholder=feld.get("placeholder", ""), key=key)
-    return werte
-
 # =============================================
 # SESSION STATE INITIALISIERUNG
 # =============================================
 for _k, _v in [
-    ("eingeloggt", False), ("benutzername", ""), ("rolle", ""),
-    ("benutzer_name", ""), ("aktiver_workspace", None), ("ws_files", {}),
-    ("edit_artikel_id", None), ("detail_artikel_id", None),
+    ("eingeloggt",          False),
+    ("benutzername",        ""),
+    ("rolle",               ""),
+    ("benutzer_name",       ""),
+    ("aktiver_workspace",   None),
+    ("ws_files",            {}),
+    ("edit_artikel_id",     None),
+    ("detail_artikel_id",   None),
+    ("neu_kat_auswahl",     None),
 ]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
@@ -278,8 +260,8 @@ if not st.session_state.eingeloggt:
 
     with login_tab:
         with st.form("login_form"):
-            bn_input = st.text_input("👤 Benutzername")
-            pw_input = st.text_input("🔑 Passwort", type="password")
+            bn_input  = st.text_input("👤 Benutzername")
+            pw_input  = st.text_input("🔑 Passwort", type="password")
             login_btn = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
         if login_btn:
             users = load_users()
@@ -299,11 +281,12 @@ if not st.session_state.eingeloggt:
 
     with register_tab:
         with st.form("register_form"):
-            reg_name    = st.text_input("👤 Vollständiger Name", placeholder="z.B. Max Mustermann")
-            reg_bn      = st.text_input("👤 Benutzername",        placeholder="z.B. max.mustermann")
-            reg_pw1     = st.text_input("🔑 Passwort wählen",     type="password")
-            reg_pw2     = st.text_input("🔑 Passwort wiederholen",type="password")
-            reg_btn     = st.form_submit_button("✅ Account erstellen", type="primary", use_container_width=True)
+            reg_name = st.text_input("👤 Vollständiger Name", placeholder="z.B. Max Mustermann")
+            reg_bn   = st.text_input("👤 Benutzername",       placeholder="z.B. max.mustermann")
+            reg_pw1  = st.text_input("🔑 Passwort wählen",    type="password")
+            reg_pw2  = st.text_input("🔑 Passwort wiederholen", type="password")
+            reg_btn  = st.form_submit_button("✅ Account erstellen", type="primary",
+                                              use_container_width=True)
         if reg_btn:
             users = load_users()
             if not reg_name.strip() or not reg_bn.strip() or not reg_pw1.strip():
@@ -355,8 +338,8 @@ if st.session_state.aktiver_workspace is None:
                     if ws.get("beschreibung"):
                         st.caption(ws["beschreibung"])
                 with c2:
-                    pw_ein = st.text_input("Passwort", type="password",
-                                           key=f"pw_{ws['id']}") if ws.get("passwort") else None
+                    pw_ein = (st.text_input("Passwort", type="password", key=f"pw_{ws['id']}")
+                              if ws.get("passwort") else None)
                 with c3:
                     if st.button("▶️ Öffnen", key=f"open_{ws['id']}", use_container_width=True):
                         if ws.get("passwort") and hash_passwort(pw_ein or "") != ws["passwort"]:
@@ -364,7 +347,8 @@ if st.session_state.aktiver_workspace is None:
                         else:
                             st.session_state.aktiver_workspace = ws
                             st.session_state.rolle = get_ws_rolle(ws)
-                            mi = ws.get("mitglieder_info", {}).get(st.session_state.benutzername, {})
+                            mi = ws.get("mitglieder_info", {}).get(
+                                st.session_state.benutzername, {})
                             st.session_state.erlaubte_raeume = mi.get("erlaubte_raeume", [])
                             init_workspace_data(ws["id"])
                             st.rerun()
@@ -383,21 +367,22 @@ if st.session_state.aktiver_workspace is None:
         ws_name  = st.text_input("📝 Name", placeholder="z.B. Zuhause, Arbeit, Lager...")
         ws_beschr = st.text_input("💬 Beschreibung (optional)")
         ws_pw    = st.text_input("🔒 Passwort (optional)", type="password")
-        ws_btn   = st.form_submit_button("✅ Workspace erstellen", type="primary", use_container_width=True)
+        ws_btn   = st.form_submit_button("✅ Workspace erstellen", type="primary",
+                                          use_container_width=True)
     if ws_btn:
         if not ws_name.strip():
             st.error("Bitte einen Namen eingeben!")
         else:
             neuer_ws = {
-                "id":               str(uuid.uuid4()),
-                "name":             ws_name.strip(),
-                "beschreibung":     ws_beschr.strip(),
-                "besitzer":         st.session_state.benutzername,
-                "passwort":         hash_passwort(ws_pw) if ws_pw.strip() else None,
-                "mitglieder":       [],
+                "id":                str(uuid.uuid4()),
+                "name":              ws_name.strip(),
+                "beschreibung":      ws_beschr.strip(),
+                "besitzer":          st.session_state.benutzername,
+                "passwort":          hash_passwort(ws_pw) if ws_pw.strip() else None,
+                "mitglieder":        [],
                 "mitglieder_rollen": {},
-                "mitglieder_info":  {},
-                "erstellt_am":      datetime.now().strftime("%d.%m.%Y %H:%M"),
+                "mitglieder_info":   {},
+                "erstellt_am":       datetime.now().strftime("%d.%m.%Y %H:%M"),
             }
             all_ws = load_workspaces()
             all_ws.append(neuer_ws)
@@ -411,7 +396,7 @@ if st.session_state.aktiver_workspace is None:
         einladung = st.text_input("📎 Workspace-ID eingeben")
         join_btn  = st.form_submit_button("↗️ Beitreten", use_container_width=True)
     if join_btn:
-        all_ws  = load_workspaces()
+        all_ws   = load_workspaces()
         gefunden = next((w for w in all_ws if w["id"] == einladung.strip()), None)
         if not gefunden:
             st.error("❌ Workspace nicht gefunden!")
@@ -460,7 +445,7 @@ with col_user:
         if st.button("📂 Workspaces", use_container_width=True):
             st.session_state.aktiver_workspace = None
             for k in ["inventar", "raeume", "kategorien", "ausleihen",
-                      "ws_files", "aktiver_raum", "detail_artikel_id"]:
+                      "ws_files", "aktiver_raum", "detail_artikel_id", "neu_kat_auswahl"]:
                 st.session_state.pop(k, None)
             st.rerun()
     with cb:
@@ -470,7 +455,7 @@ with col_user:
             st.rerun()
 
 # =============================================
-# SIDEBAR – nur Raum- & Kategorieverwaltung
+# SIDEBAR – Raum- & Kategorieverwaltung
 # =============================================
 with st.sidebar:
     st.header("🏠 Raumverwaltung")
@@ -514,7 +499,7 @@ with st.sidebar:
                         st.session_state.aktiver_raum = neuer_raum_n.strip()
                     save_json(st.session_state.ws_files["raeume"], st.session_state.raeume)
                     save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
-                    st.success(f"'{raum_umb}' → '{neuer_raum_n.strip()}' umbenannt!")
+                    st.success(f"'{raum_umb}' wurde in '{neuer_raum_n.strip()}' umbenannt!")
                     st.rerun()
 
     with st.expander("🗑️ Raum löschen"):
@@ -527,7 +512,8 @@ with st.sidebar:
                 else:
                     st.session_state.raeume.remove(raum_del)
                     save_json(st.session_state.ws_files["raeume"], st.session_state.raeume)
-                    st.session_state.aktiver_raum = st.session_state.raeume[0] if st.session_state.raeume else None
+                    st.session_state.aktiver_raum = (st.session_state.raeume[0]
+                                                     if st.session_state.raeume else None)
                     st.success(f"Raum '{raum_del}' gelöscht!")
                     st.rerun()
 
@@ -560,7 +546,7 @@ with st.sidebar:
                             a["kategorie"] = neuer_kat_n.strip()
                     save_json(st.session_state.ws_files["kategorien"], st.session_state.kategorien)
                     save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
-                    st.success(f"'{kat_umb}' → '{neuer_kat_n.strip()}' umbenannt!")
+                    st.success(f"'{kat_umb}' wurde in '{neuer_kat_n.strip()}' umbenannt!")
                     st.rerun()
 
     with st.expander("🗑️ Kategorie löschen"):
@@ -606,7 +592,6 @@ if st.session_state.detail_artikel_id is not None:
                     st.rerun()
 
             with col_info:
-                # Edit-Modus
                 if st.session_state.get("edit_artikel_id") == artikel_detail["id"]:
                     st.markdown("### ✏️ Artikel bearbeiten")
                     with st.form(key=f"edit_form_{artikel_detail['id']}"):
@@ -622,16 +607,19 @@ if st.session_state.detail_artikel_id is not None:
                                                        value=int(artikel_detail["menge"]))
                         with ec2:
                             e_preis = st.number_input("Preis (€)", min_value=0.0, step=0.01,
-                                                       format="%.2f", value=float(artikel_detail["preis"]))
+                                                       format="%.2f",
+                                                       value=float(artikel_detail["preis"]))
                         e_raum    = st.selectbox(
                             "Raum", st.session_state.raeume,
                             index=st.session_state.raeume.index(artikel_detail["raum"])
                             if artikel_detail["raum"] in st.session_state.raeume else 0
                         )
-                        e_barcode = st.text_input("Barcode", value=artikel_detail.get("barcode", "") or "")
-                        e_notiz   = st.text_area("Notiz",   value=artikel_detail.get("notiz",   "") or "")
+                        e_barcode = st.text_input("Barcode",
+                                                   value=artikel_detail.get("barcode", "") or "")
+                        e_notiz   = st.text_area("Notiz",
+                                                  value=artikel_detail.get("notiz", "") or "")
 
-                        # Zusatzfelder im Edit-Formular (innerhalb st.form)
+                        # Zusatzfelder im Edit-Formular
                         e_zusatz_werte = {}
                         edit_felder = KATEGORIE_FELDER.get(e_kat, [])
                         if edit_felder:
@@ -656,7 +644,8 @@ if st.session_state.detail_artikel_id is not None:
                             speichern = st.form_submit_button("💾 Speichern", type="primary",
                                                                use_container_width=True)
                         with sc2:
-                            abbrechen = st.form_submit_button("✖️ Abbrechen", use_container_width=True)
+                            abbrechen = st.form_submit_button("✖️ Abbrechen",
+                                                               use_container_width=True)
 
                     if speichern:
                         if not e_name.strip():
@@ -664,18 +653,19 @@ if st.session_state.detail_artikel_id is not None:
                         else:
                             for a in st.session_state.inventar:
                                 if a["id"] == artikel_detail["id"]:
-                                    diff           = int(e_menge) - a["menge"]
-                                    a["name"]      = e_name.strip()
-                                    a["kategorie"] = e_kat
-                                    a["menge"]     = int(e_menge)
-                                    a["verfuegbar"]= max(0, a.get("verfuegbar", a["menge"]) + diff)
-                                    a["preis"]     = round(e_preis, 2)
-                                    a["raum"]      = e_raum
-                                    a["barcode"]   = e_barcode.strip()
-                                    a["notiz"]     = e_notiz.strip()
-                                    a["zusatz"]    = e_zusatz_werte
+                                    diff            = int(e_menge) - a["menge"]
+                                    a["name"]       = e_name.strip()
+                                    a["kategorie"]  = e_kat
+                                    a["menge"]      = int(e_menge)
+                                    a["verfuegbar"] = max(0, a.get("verfuegbar", a["menge"]) + diff)
+                                    a["preis"]      = round(e_preis, 2)
+                                    a["raum"]       = e_raum
+                                    a["barcode"]    = e_barcode.strip()
+                                    a["notiz"]      = e_notiz.strip()
+                                    a["zusatz"]     = e_zusatz_werte
                                     break
-                            save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
+                            save_json(st.session_state.ws_files["inventar"],
+                                      st.session_state.inventar)
                             st.session_state.edit_artikel_id = None
                             st.success("✅ Artikel gespeichert!")
                             st.rerun()
@@ -684,7 +674,8 @@ if st.session_state.detail_artikel_id is not None:
                         st.rerun()
 
                 else:
-                    if st.button("✏️ Artikel bearbeiten", key=f"btn_edit_{artikel_detail['id']}"):
+                    if st.button("✏️ Artikel bearbeiten",
+                                 key=f"btn_edit_{artikel_detail['id']}"):
                         st.session_state.edit_artikel_id = artikel_detail["id"]
                         st.rerun()
 
@@ -728,12 +719,14 @@ if st.session_state.detail_artikel_id is not None:
                         value=artikel_detail.get("notiz", ""),
                         key=f"notiz_{artikel_detail['id']}"
                     )
-                    if st.button("💾 Notiz speichern", key=f"save_notiz_{artikel_detail['id']}"):
+                    if st.button("💾 Notiz speichern",
+                                 key=f"save_notiz_{artikel_detail['id']}"):
                         for a in st.session_state.inventar:
                             if a["id"] == artikel_detail["id"]:
                                 a["notiz"] = neue_notiz.strip()
                                 break
-                        save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
+                        save_json(st.session_state.ws_files["inventar"],
+                                  st.session_state.inventar)
                         st.success("Notiz gespeichert!")
                         st.rerun()
 
@@ -793,7 +786,8 @@ with tabs[tab_index["📋 Inventar"]]:
     with fc2:
         filter_kat = st.selectbox("Kategorie filtern", ["Alle"] + st.session_state.kategorien)
     with fc3:
-        filter_status = st.selectbox("Status filtern", ["Alle", "✅ Verfügbar", "🔴 Ausgeliehen"])
+        filter_status = st.selectbox("Status filtern",
+                                      ["Alle", "✅ Verfügbar", "🔴 Ausgeliehen"])
 
     # Dynamische Zusatzfilter
     filter_zusatz = {}
@@ -825,7 +819,8 @@ with tabs[tab_index["📋 Inventar"]]:
     if filter_status == "✅ Verfügbar":
         raum_inventar = [a for a in raum_inventar if a.get("verfuegbar", a["menge"]) > 0]
     elif filter_status == "🔴 Ausgeliehen":
-        raum_inventar = [a for a in raum_inventar if a.get("verfuegbar", a["menge"]) < a["menge"]]
+        raum_inventar = [a for a in raum_inventar
+                         if a.get("verfuegbar", a["menge"]) < a["menge"]]
 
     if raum_inventar:
         st.markdown(f"**{len(raum_inventar)} Artikel gefunden**")
@@ -846,9 +841,10 @@ with tabs[tab_index["📋 Inventar"]]:
                                   else ("🔴" if verfuegbar == 0 else "⚠️"))
                         st.markdown(f"**{a['name']}** {s_icon}")
                         st.caption(f"📂 {a['kategorie']} | 🏠 {a['raum']}")
-                        st.caption(f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
+                        st.caption(
+                            f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
 
-                        # Zusatzinfos auf Karte
+                        # Zusatzinfos auf der Karte anzeigen
                         z_karte = a.get("zusatz", {})
                         f_karte = KATEGORIE_FELDER.get(a["kategorie"], [])
                         if z_karte and f_karte:
@@ -894,22 +890,38 @@ with tabs[tab_index["📋 Inventar"]]:
         st.info("Keine Artikel zum Löschen vorhanden.")
 
 # -----------------------------------------------
-# TAB: Artikel hinzufügen (HAUPTBEREICH – kein Sidebar-Problem mehr!)
+# TAB: Artikel hinzufügen
+# SCHLÜSSEL-FIX: Kategorie ZUERST rendern (außerhalb st.columns),
+# dann Zusatzfelder basierend auf der Auswahl rendern.
+# So reagiert Streamlit sofort ohne st.rerun().
 # -----------------------------------------------
 with tabs[tab_index["➕ Artikel hinzufügen"]]:
     st.subheader(f"➕ Neuen Artikel hinzufügen – Raum: {st.session_state.aktiver_raum}")
 
     with st.container(border=True):
+
+        # ── SCHRITT 1: Kategorie ZUERST auswählen (kein st.columns hier!) ──
+        neu_kat = st.selectbox(
+            "🗂️ Kategorie auswählen",
+            st.session_state.kategorien,
+            key="neu_kat_select",
+        )
+
+        st.divider()
+
+        # ── SCHRITT 2: Grundfelder ──────────────────────────────────────────
         h1, h2 = st.columns(2)
         with h1:
-            neu_name    = st.text_input("📦 Artikelname", placeholder="z.B. Inception", key="neu_name")
-            neu_kat     = st.selectbox("🗂️ Kategorie", st.session_state.kategorien,  key="neu_kat")
-            neu_raum    = st.selectbox("🏠 Raum", get_erlaubte_raeume(),
-                                        index=get_erlaubte_raeume().index(st.session_state.aktiver_raum)
-                                        if st.session_state.aktiver_raum in get_erlaubte_raeume() else 0,
-                                        key="neu_raum")
+            neu_name = st.text_input("📦 Artikelname",
+                                      placeholder="z.B. Inception", key="neu_name")
+            neu_raum = st.selectbox(
+                "🏠 Raum", get_erlaubte_raeume(),
+                index=get_erlaubte_raeume().index(st.session_state.aktiver_raum)
+                if st.session_state.aktiver_raum in get_erlaubte_raeume() else 0,
+                key="neu_raum"
+            )
         with h2:
-            neu_menge   = st.number_input("🔢 Menge",     min_value=1,   step=1,   key="neu_menge")
+            neu_menge   = st.number_input("🔢 Menge", min_value=1, step=1, key="neu_menge")
             neu_preis   = st.number_input("💶 Preis (€)", min_value=0.0, step=0.01,
                                            format="%.2f", key="neu_preis")
             neu_barcode = st.text_input("🔖 Barcode-Nr. (optional)",
@@ -917,11 +929,14 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
 
         neu_notiz = st.text_area("📝 Notiz (optional)", key="neu_notiz")
 
-        # ── Kategorie-spezifische Zusatzfelder ──────────────────────────────
-        neu_zusatz  = {}
-        kat_felder  = KATEGORIE_FELDER.get(neu_kat, [])
+        # ── SCHRITT 3: Kategorie-spezifische Zusatzfelder ──────────────────
+        # Da neu_kat bereits oben gerendert wurde, reagiert dieser Block
+        # sofort wenn der Benutzer die Kategorie wechselt – kein Rerun nötig!
+        neu_zusatz = {}
+        kat_felder = KATEGORIE_FELDER.get(neu_kat, [])
         if kat_felder:
-            st.markdown(f"---\n**📋 Zusatzfelder – {neu_kat}:**")
+            st.divider()
+            st.markdown(f"**📋 Zusatzfelder für '{neu_kat}':**")
             zf1, zf2 = st.columns(2)
             for fi, feld in enumerate(kat_felder):
                 with (zf1 if fi % 2 == 0 else zf2):
@@ -936,6 +951,8 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
                             key=fkey)
 
         st.divider()
+
+        # ── SCHRITT 4: Speichern ────────────────────────────────────────────
         if st.button("✅ Artikel hinzufügen", type="primary",
                      use_container_width=True, key="btn_neu_hinzu"):
             if not neu_name.strip():
@@ -944,19 +961,19 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
                 st.error("❌ Bitte zuerst einen Raum anlegen!")
             else:
                 neuer_artikel = {
-                    "id":          str(uuid.uuid4()),
-                    "laufnummer":  max((a.get("laufnummer", 0)
-                                       for a in st.session_state.inventar), default=0) + 1,
-                    "name":        neu_name.strip(),
-                    "kategorie":   neu_kat,
-                    "menge":       int(neu_menge),
-                    "verfuegbar":  int(neu_menge),
-                    "raum":        neu_raum,
-                    "preis":       round(neu_preis, 2),
-                    "barcode":     neu_barcode.strip(),
-                    "notiz":       neu_notiz.strip(),
-                    "zusatz":      neu_zusatz,
-                    "datum":       datetime.now().strftime("%d.%m.%Y %H:%M"),
+                    "id":         str(uuid.uuid4()),
+                    "laufnummer": max((a.get("laufnummer", 0)
+                                      for a in st.session_state.inventar), default=0) + 1,
+                    "name":       neu_name.strip(),
+                    "kategorie":  neu_kat,
+                    "menge":      int(neu_menge),
+                    "verfuegbar": int(neu_menge),
+                    "raum":       neu_raum,
+                    "preis":      round(neu_preis, 2),
+                    "barcode":    neu_barcode.strip(),
+                    "notiz":      neu_notiz.strip(),
+                    "zusatz":     neu_zusatz,
+                    "datum":      datetime.now().strftime("%d.%m.%Y %H:%M"),
                 }
                 st.session_state.inventar.append(neuer_artikel)
                 save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
@@ -978,19 +995,21 @@ if hat_recht("checkout"):
             if verf:
                 cc1, cc2 = st.columns(2)
                 with cc1:
-                    labels   = [
-                        f"#{a.get('laufnummer','?')} – {a['name']} ({a['raum']}) | "
+                    labels  = [
+                        f"#{a.get('laufnummer', '?')} – {a['name']} ({a['raum']}) | "
                         f"Verfügbar: {a.get('verfuegbar', a['menge'])}"
                         for a in verf
                     ]
-                    co_aus   = st.selectbox("Artikel", labels, key="co_artikel")
-                    art_obj  = verf[labels.index(co_aus)]
-                    co_menge = st.number_input("Menge", min_value=1,
-                                               max_value=art_obj.get("verfuegbar", art_obj["menge"]),
-                                               step=1, key="co_menge")
+                    co_aus  = st.selectbox("Artikel", labels, key="co_artikel")
+                    art_obj = verf[labels.index(co_aus)]
+                    co_menge = st.number_input(
+                        "Menge", min_value=1,
+                        max_value=art_obj.get("verfuegbar", art_obj["menge"]),
+                        step=1, key="co_menge"
+                    )
                 with cc2:
                     co_person = st.text_input("Name der Person",
-                                              placeholder="z.B. Max Mustermann")
+                                               placeholder="z.B. Max Mustermann")
                     co_datum  = st.date_input("Ausleihdatum",       value=datetime.today())
                     co_rueck  = st.date_input("Erwartete Rückgabe", value=datetime.today())
                     co_notiz  = st.text_area("Notiz (optional)", key="co_notiz")
@@ -1026,42 +1045,48 @@ if hat_recht("checkout"):
                         st.rerun()
 
                 st.divider()
+                st.markdown("### 📋 Aktuell ausgeliehene Artikel")
                 aktiv = [a for a in st.session_state.ausleihen if a["status"] == "ausgeliehen"]
                 if aktiv:
-                    st.markdown("### 📋 Aktuell ausgeliehene Artikel")
+                    df_aktiv = pd.DataFrame(aktiv).rename(columns={
+                        "ausleihe_id": "ID", "artikel_name": "Artikel", "raum": "Raum",
+                        "menge": "Menge", "person": "Ausgeliehen an",
+                        "checkout_datum": "Ausgabe",
+                        "rueckgabe_erwartet": "Rückgabe erwartet", "notiz": "Notiz"
+                    })
                     st.dataframe(
-                        pd.DataFrame(aktiv).rename(columns={
-                            "artikel_name": "Artikel", "raum": "Raum",
-                            "menge": "Menge", "person": "Ausgeliehen an",
-                            "checkout_datum": "Ausgabe",
-                            "rueckgabe_erwartet": "Rückgabe erwartet",
-                        })[["Artikel","Raum","Menge","Ausgeliehen an","Ausgabe","Rückgabe erwartet"]],
+                        df_aktiv[["ID", "Artikel", "Raum", "Menge", "Ausgeliehen an",
+                                  "Ausgabe", "Rückgabe erwartet", "Notiz"]],
                         use_container_width=True, hide_index=True
                     )
+                else:
+                    st.info("Keine aktiven Ausleihen.")
             else:
-                st.info("Keine verfügbaren Artikel vorhanden.")
+                st.info("Keine verfügbaren Artikel zum Ausleihen vorhanden.")
 
         with co2:
             st.markdown("### 📥 Artikel zurückgeben")
-            aktiv_ci = [a for a in st.session_state.ausleihen if a["status"] == "ausgeliehen"]
-            if aktiv_ci:
+            aktive = [a for a in st.session_state.ausleihen if a["status"] == "ausgeliehen"]
+            if aktive:
                 ci_labels = [
-                    f"{a['artikel_name']} ({a['menge']}x) → {a['person']} | {a['checkout_datum']}"
-                    for a in aktiv_ci
+                    f"#{a['ausleihe_id'][:8]} – {a['artikel_name']} ({a['menge']}x) "
+                    f"→ {a['person']} | Ausgabe: {a['checkout_datum']}"
+                    for a in aktive
                 ]
-                ci_aus  = st.selectbox("Ausleihe", ci_labels, key="ci_auswahl")
-                ci_obj  = aktiv_ci[ci_labels.index(ci_aus)]
+                ci_aus    = st.selectbox("Ausleihe auswählen", ci_labels, key="ci_auswahl")
+                ci_obj    = aktive[ci_labels.index(ci_aus)]
+
                 ci_c1, ci_c2 = st.columns(2)
                 with ci_c1:
                     st.info(
                         f"**Artikel:** {ci_obj['artikel_name']}  \n"
-                        f"**An:** {ci_obj['person']}  \n"
+                        f"**Ausgeliehen an:** {ci_obj['person']}  \n"
                         f"**Ausgabe:** {ci_obj['checkout_datum']}  \n"
-                        f"**Erw. Rückgabe:** {ci_obj['rueckgabe_erwartet']}"
+                        f"**Erwartete Rückgabe:** {ci_obj['rueckgabe_erwartet']}"
                     )
                 with ci_c2:
                     ci_datum = st.date_input("Rückgabedatum", value=datetime.today(),
-                                             key="ci_datum")
+                                              key="ci_datum")
                     ci_notiz = st.text_area("Notiz (optional)", key="ci_notiz")
 
                 if st.button("📥 Einchecken", type="primary"):
@@ -1076,37 +1101,41 @@ if hat_recht("checkout"):
                               st.session_state.ausleihen)
                     for a in st.session_state.inventar:
                         if a["id"] == ci_obj["artikel_id"]:
-                            a["verfuegbar"] = (a.get("verfuegbar", 0) + ci_obj["menge"])
+                            a["verfuegbar"] = a.get("verfuegbar", 0) + ci_obj["menge"]
                             break
                     save_json(st.session_state.ws_files["inventar"],
                               st.session_state.inventar)
-                    st.success(f"✅ '{ci_obj['artikel_name']}' zurückgebucht!")
+                    st.success(f"✅ '{ci_obj['artikel_name']}' erfolgreich zurückgebucht!")
                     st.rerun()
             else:
-                st.info("Keine aktiven Ausleihen.")
+                st.info("Keine aktiven Ausleihen zur Rückgabe vorhanden.")
 
         with co3:
             st.markdown("### 📜 Vollständige Ausleihhistorie")
-            h_c1, h_c2 = st.columns(2)
-            with h_c1:
-                f_person = st.text_input("🔍 Person suchen", placeholder="z.B. Max Mustermann")
-            with h_c2:
-                f_hstatus = st.selectbox("Status", ["Alle", "ausgeliehen", "zurückgegeben"])
+            hc1, hc2 = st.columns(2)
+            with hc1:
+                h_person = st.text_input("🔍 Nach Person suchen")
+            with hc2:
+                h_status = st.selectbox("Status", ["Alle", "ausgeliehen", "zurückgegeben"])
+
             hist = st.session_state.ausleihen
-            if f_person:
-                hist = [a for a in hist if f_person.lower() in a["person"].lower()]
-            if f_hstatus != "Alle":
-                hist = [a for a in hist if a["status"] == f_hstatus]
+            if h_person:
+                hist = [a for a in hist if h_person.lower() in a["person"].lower()]
+            if h_status != "Alle":
+                hist = [a for a in hist if a["status"] == h_status]
+
             if hist:
-                df_h = pd.DataFrame(hist).rename(columns={
-                    "artikel_name": "Artikel", "raum": "Raum", "menge": "Menge",
-                    "person": "Person", "checkout_datum": "Ausgabe",
+                df_hist = pd.DataFrame(hist).rename(columns={
+                    "ausleihe_id": "ID", "artikel_name": "Artikel", "raum": "Raum",
+                    "menge": "Menge", "person": "Person",
+                    "checkout_datum": "Ausgabe",
                     "rueckgabe_erwartet": "Erw. Rückgabe",
-                    "rueckgabe_datum": "Rückgabe", "status": "Status",
+                    "rueckgabe_datum": "Rückgabe",
+                    "status": "Status", "notiz": "Notiz"
                 })
-                st.dataframe(df_h, use_container_width=True, hide_index=True)
-                csv_h = df_h.to_csv(index=False, sep=";", encoding="utf-8-sig")
-                st.download_button("📥 Als CSV herunterladen", csv_h,
+                st.dataframe(df_hist, use_container_width=True, hide_index=True)
+                csv_hist = df_hist.to_csv(index=False, sep=";", encoding="utf-8-sig")
+                st.download_button("📥 Historie als CSV", csv_hist,
                                    "ausleihhistorie.csv", "text/csv")
             else:
                 st.info("Keine Einträge gefunden.")
@@ -1122,44 +1151,48 @@ if hat_recht("barcode"):
         with bc1:
             st.markdown("Scanne einen Barcode oder gib ihn manuell ein.")
             try:
-                result = quagga()
-                if result and result.get("codeResult"):
-                    code = result["codeResult"]["code"]
-                    st.success(f"✅ Barcode erkannt: `{code}`")
-                    treffer = [a for a in st.session_state.inventar
-                               if a.get("barcode") == code]
-                    if treffer:
-                        st.dataframe(pd.DataFrame(treffer),
-                                     use_container_width=True, hide_index=True)
+                scan_result = quagga()
+                if scan_result and scan_result.get("codeResult"):
+                    scanned = scan_result["codeResult"]["code"]
+                    st.success(f"✅ Erkannter Barcode: `{scanned}`")
+                    gefunden = [a for a in st.session_state.inventar
+                                if a.get("barcode") == scanned]
+                    if gefunden:
+                        st.dataframe(pd.DataFrame(gefunden), use_container_width=True,
+                                     hide_index=True)
                     else:
                         st.warning("Kein Artikel mit diesem Barcode gefunden.")
             except Exception:
-                st.info("💡 Barcode-Scanner nicht verfügbar.")
-                man_code = st.text_input("Barcode manuell eingeben")
-                if man_code:
-                    treffer = [a for a in st.session_state.inventar
-                               if a.get("barcode") == man_code]
-                    if treffer:
+                st.info("💡 Barcode-Scanner nicht verfügbar. "
+                        "Bitte installiere: `pip install streamlit-quagga`")
+                manuell = st.text_input("Barcode manuell eingeben",
+                                         placeholder="z.B. 4012345678901")
+                if manuell:
+                    gefunden = [a for a in st.session_state.inventar
+                                if a.get("barcode") == manuell]
+                    if gefunden:
                         st.success("✅ Artikel gefunden:")
-                        st.dataframe(pd.DataFrame(treffer),
-                                     use_container_width=True, hide_index=True)
+                        st.dataframe(pd.DataFrame(gefunden), use_container_width=True,
+                                     hide_index=True)
                     else:
                         st.warning("Kein Artikel gefunden.")
 
         with bc2:
-            st.markdown("Generiere einen QR-Code für einen Artikel.")
+            st.markdown("Generiere einen QR-Code für jeden Artikel zum Ausdrucken.")
             if st.session_state.inventar:
                 qr_labels = [
-                    f"#{a.get('laufnummer','?')} – {a['name']} ({a['raum']})"
+                    f"#{a.get('laufnummer', '?')} – {a['name']} ({a['raum']})"
                     for a in st.session_state.inventar
                 ]
-                qr_aus = st.selectbox("Artikel auswählen", qr_labels)
-                qr_art = st.session_state.inventar[qr_labels.index(qr_aus)]
-                qr_buf = generate_qr_code(qr_art)
-                st.image(qr_buf, caption=qr_art["name"], width=200)
-                st.download_button("📥 QR-Code herunterladen", qr_buf,
-                                   f"qr_{qr_art['name']}.png", "image/png",
-                                   key=f"qr_tab_{qr_art['id']}")
+                qr_aus = st.selectbox("Artikel für QR-Code", qr_labels)
+                qr_obj = st.session_state.inventar[qr_labels.index(qr_aus)]
+                qr_buf = generate_qr_code(qr_obj)
+                st.image(qr_buf, caption=f"QR-Code: {qr_obj['name']}", width=200)
+                st.download_button(
+                    "📥 QR-Code herunterladen", qr_buf,
+                    f"qr_{qr_obj['name']}.png", "image/png",
+                    key=f"qr_tab_{qr_obj['id']}"
+                )
             else:
                 st.info("Noch keine Artikel vorhanden.")
 
@@ -1169,24 +1202,26 @@ if hat_recht("barcode"):
 if hat_recht("statistiken"):
     with tabs[tab_index["📊 Statistiken"]]:
         st.subheader("📊 Statistiken")
-        gs1, gs2 = st.columns(2)
+        gs_col, rm_col = st.columns(2)
 
-        with gs1:
+        with gs_col:
             st.markdown("### 🌐 Gesamtübersicht")
             if st.session_state.inventar:
                 m1, m2, m3, m4 = st.columns(4)
-                m1.metric("📦 Artikel",       len(st.session_state.inventar))
-                m2.metric("🔢 Gesamtmenge",   sum(a["menge"] for a in st.session_state.inventar))
+                m1.metric("📦 Artikel",      len(st.session_state.inventar))
+                m2.metric("🔢 Gesamtmenge",  sum(a["menge"] for a in st.session_state.inventar))
                 m3.metric("💶 Gesamtwert",
-                           f"{sum(a['preis']*a['menge'] for a in st.session_state.inventar):.2f} €")
-                m4.metric("🔴 Ausleihen",
-                           len([a for a in st.session_state.ausleihen
-                                if a["status"] == "ausgeliehen"]))
+                           f"{sum(a['preis'] * a['menge'] for a in st.session_state.inventar):.2f} €")
+                aktiv_ausl = len([a for a in st.session_state.ausleihen
+                                  if a["status"] == "ausgeliehen"])
+                m4.metric("🔴 Aktive Ausleihen", aktiv_ausl)
+
                 st.markdown("#### Artikel pro Raum")
                 raum_stats = {}
                 for a in st.session_state.inventar:
                     raum_stats[a["raum"]] = raum_stats.get(a["raum"], 0) + 1
                 st.bar_chart(raum_stats)
+
                 st.markdown("#### Artikel pro Kategorie")
                 kat_stats = {}
                 for a in st.session_state.inventar:
@@ -1195,7 +1230,7 @@ if hat_recht("statistiken"):
             else:
                 st.info("Noch keine Artikel vorhanden.")
 
-        with gs2:
+        with rm_col:
             st.markdown(f"### 🏠 Raum: {st.session_state.aktiver_raum}")
             raum_art = [a for a in st.session_state.inventar
                         if a["raum"] == st.session_state.aktiver_raum]
@@ -1204,7 +1239,7 @@ if hat_recht("statistiken"):
                 r1.metric("📦 Artikel", len(raum_art))
                 r2.metric("🔢 Menge",   sum(a["menge"] for a in raum_art))
                 r3.metric("💶 Wert",
-                           f"{sum(a['preis']*a['menge'] for a in raum_art):.2f} €")
+                           f"{sum(a['preis'] * a['menge'] for a in raum_art):.2f} €")
             else:
                 st.info(f"Keine Artikel in '{st.session_state.aktiver_raum}'.")
 
@@ -1216,185 +1251,206 @@ if hat_recht("export"):
         st.subheader("📤 Import & Export")
         imp_tab, exp_tab = st.tabs(["📥 Import", "📤 Export"])
 
+        # ── IMPORT ──────────────────────────────────────────────────────────
         with imp_tab:
             st.markdown("### 📥 Artikel aus Excel oder CSV importieren")
+
             st.markdown("#### 1️⃣ Vorlage herunterladen")
             vorlage_df = pd.DataFrame(columns=[
                 "name", "kategorie", "menge", "preis",
-                "raum", "barcode", "notiz"
+                "raum", "barcode", "notiz", "mindestmenge"
             ])
-            vc1, vc2 = st.columns(2)
-            with vc1:
+            vl1, vl2 = st.columns(2)
+            with vl1:
                 if XLSX_AVAILABLE:
-                    vbuf = io.BytesIO()
-                    with pd.ExcelWriter(vbuf, engine="openpyxl") as writer:
+                    vl_buf = io.BytesIO()
+                    with pd.ExcelWriter(vl_buf, engine="openpyxl") as writer:
                         vorlage_df.to_excel(writer, index=False, sheet_name="Inventar")
-                    vbuf.seek(0)
-                    st.download_button("📊 Excel-Vorlage", data=vbuf,
-                                       file_name="inventar_vorlage.xlsx",
-                                       mime="application/vnd.openxmlformats-officedocument"
-                                            ".spreadsheetml.sheet",
-                                       use_container_width=True)
-            with vc2:
-                st.download_button("📄 CSV-Vorlage",
-                                   data=vorlage_df.to_csv(index=False, sep=";",
-                                                           encoding="utf-8-sig"),
-                                   file_name="inventar_vorlage.csv",
-                                   mime="text/csv", use_container_width=True)
+                    vl_buf.seek(0)
+                    st.download_button(
+                        "📊 Excel-Vorlage", data=vl_buf,
+                        file_name="inventar_vorlage.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+            with vl2:
+                vl_csv = vorlage_df.to_csv(index=False, sep=";", encoding="utf-8-sig")
+                st.download_button(
+                    "📄 CSV-Vorlage", data=vl_csv,
+                    file_name="inventar_vorlage.csv", mime="text/csv",
+                    use_container_width=True
+                )
             st.caption("Pflichtfelder: **name**, **menge** | "
-                       "Optional: kategorie, preis, raum, barcode, notiz")
+                       "Optional: kategorie, preis, raum, barcode, notiz, mindestmenge")
 
             st.divider()
             st.markdown("#### 2️⃣ Datei hochladen")
-            up_file = st.file_uploader("Excel (.xlsx) oder CSV auswählen",
-                                        type=["xlsx", "csv"], key="import_file")
-            imp_raum = st.selectbox(
+            upload_file = st.file_uploader(
+                "Excel (.xlsx) oder CSV auswählen",
+                type=["xlsx", "csv"], key="import_file"
+            )
+            import_raum_override = st.selectbox(
                 "📍 Ziel-Raum (überschreibt 'raum'-Spalte wenn gesetzt)",
                 ["— Spalte aus Datei verwenden —"] + st.session_state.raeume,
                 key="import_raum"
             )
-            dup_verh = st.radio(
+            duplikat_verhalten = st.radio(
                 "🔁 Bei doppeltem Artikelname",
                 ["Überspringen", "Trotzdem hinzufügen"],
-                horizontal=True, key="dup_verhalten"
+                horizontal=True, key="duplikat_verhalten"
             )
 
-            if up_file is not None:
+            if upload_file is not None:
                 try:
-                    if up_file.name.endswith(".xlsx"):
-                        df_imp = pd.read_excel(up_file, dtype=str)
+                    if upload_file.name.endswith(".xlsx"):
+                        df_import = pd.read_excel(upload_file, dtype=str)
                     else:
-                        # Encoding-erkennung für CSV (ä, ö, ü etc.)
-                        raw = up_file.read()
-                        df_imp = None
+                        # Robuste Encoding-Erkennung für CSV-Dateien
+                        raw_bytes = upload_file.read()
+                        df_import = None
                         for enc in ["utf-8-sig", "utf-8", "latin-1", "cp1252", "iso-8859-1"]:
                             try:
                                 import io as _io
-                                df_imp = pd.read_csv(
-                                    _io.BytesIO(raw), sep=None,
-                                    engine="python", dtype=str, encoding=enc
+                                df_import = pd.read_csv(
+                                    _io.BytesIO(raw_bytes),
+                                    sep=None, engine="python",
+                                    dtype=str, encoding=enc
                                 )
                                 break
                             except Exception:
                                 continue
-                        if df_imp is None:
-                            st.error("❌ Datei konnte mit keinem bekannten Encoding gelesen werden.")
+                        if df_import is None:
+                            st.error("❌ Die Datei konnte mit keinem bekannten Encoding "
+                                     "gelesen werden.")
                             st.stop()
 
-                    df_imp.columns = [c.strip().lower() for c in df_imp.columns]
-                    df_imp = df_imp.fillna("")
+                    df_import.columns = [c.strip().lower() for c in df_import.columns]
+                    df_import = df_import.fillna("")
 
                     st.markdown("#### 3️⃣ Vorschau")
-                    st.dataframe(df_imp, use_container_width=True, hide_index=True)
-                    st.markdown(f"**{len(df_imp)} Zeilen** bereit zum Import.")
+                    st.dataframe(df_import, use_container_width=True, hide_index=True)
+                    st.markdown(f"**{len(df_import)} Zeilen** bereit zum Import.")
 
-                    fehlende = [f for f in ["name", "menge"] if f not in df_imp.columns]
+                    fehlende = [f for f in ["name", "menge"] if f not in df_import.columns]
                     if fehlende:
                         st.error(f"❌ Pflichtfelder fehlen: {', '.join(fehlende)}")
                     else:
                         if st.button("✅ Import starten", type="primary", key="btn_import"):
                             bestehende = [a["name"].lower() for a in st.session_state.inventar]
-                            importiert = 0
-                            uebersprungen = 0
-                            lauf_max = max(
-                                (a.get("laufnummer", 0) for a in st.session_state.inventar),
-                                default=0
-                            )
-                            for _, row in df_imp.iterrows():
-                                n = str(row.get("name", "")).strip()
-                                if not n:
+                            importiert = uebersprungen = 0
+
+                            for _, row in df_import.iterrows():
+                                art_name = str(row.get("name", "")).strip()
+                                if not art_name:
                                     uebersprungen += 1
                                     continue
-                                if dup_verh == "Überspringen" and n.lower() in bestehende:
+                                if (duplikat_verhalten == "Überspringen"
+                                        and art_name.lower() in bestehende):
                                     uebersprungen += 1
                                     continue
-                                if imp_raum != "— Spalte aus Datei verwenden —":
-                                    raum_v = imp_raum
+
+                                if import_raum_override != "— Spalte aus Datei verwenden —":
+                                    raum_val = import_raum_override
                                 else:
-                                    raum_v = str(row.get("raum","")).strip() or st.session_state.aktiver_raum
-                                    if raum_v not in st.session_state.raeume:
-                                        st.session_state.raeume.append(raum_v)
+                                    raum_val = str(row.get("raum", "")).strip() or \
+                                               st.session_state.aktiver_raum
+                                    if raum_val not in st.session_state.raeume:
+                                        st.session_state.raeume.append(raum_val)
                                         save_json(st.session_state.ws_files["raeume"],
                                                   st.session_state.raeume)
-                                kat_v = str(row.get("kategorie","")).strip() or "Sonstiges"
-                                if kat_v not in st.session_state.kategorien:
-                                    st.session_state.kategorien.append(kat_v)
+
+                                kat_val = str(row.get("kategorie", "")).strip() or "Sonstiges"
+                                if kat_val not in st.session_state.kategorien:
+                                    st.session_state.kategorien.append(kat_val)
                                     save_json(st.session_state.ws_files["kategorien"],
                                               st.session_state.kategorien)
+
                                 try:
-                                    menge_v = max(1, int(float(str(row.get("menge",1)).replace(",","."))))
+                                    menge_val = max(1, int(float(
+                                        str(row.get("menge", 1)).replace(",", "."))))
                                 except Exception:
-                                    menge_v = 1
+                                    menge_val = 1
                                 try:
-                                    preis_v = round(float(str(row.get("preis",0)).replace(",",".")), 2)
+                                    preis_val = round(float(
+                                        str(row.get("preis", 0)).replace(",", ".")), 2)
                                 except Exception:
-                                    preis_v = 0.0
-                                lauf_max += 1
-                                st.session_state.inventar.append({
-                                    "id":          str(uuid.uuid4()),
-                                    "laufnummer":  lauf_max,
-                                    "name":        n,
-                                    "kategorie":   kat_v,
-                                    "menge":       menge_v,
-                                    "verfuegbar":  menge_v,
-                                    "raum":        raum_v,
-                                    "preis":       preis_v,
-                                    "barcode":     str(row.get("barcode","")).strip(),
-                                    "notiz":       str(row.get("notiz","")).strip(),
-                                    "zusatz":      {},
-                                    "datum":       datetime.now().strftime("%d.%m.%Y %H:%M"),
-                                })
-                                bestehende.append(n.lower())
+                                    preis_val = 0.0
+
+                                neuer = {
+                                    "id":         str(uuid.uuid4()),
+                                    "laufnummer": max((a.get("laufnummer", 0)
+                                                       for a in st.session_state.inventar),
+                                                      default=0) + importiert + 1,
+                                    "name":       art_name,
+                                    "kategorie":  kat_val,
+                                    "menge":      menge_val,
+                                    "verfuegbar": menge_val,
+                                    "raum":       raum_val,
+                                    "preis":      preis_val,
+                                    "barcode":    str(row.get("barcode", "")).strip(),
+                                    "notiz":      str(row.get("notiz", "")).strip(),
+                                    "zusatz":     {},
+                                    "datum":      datetime.now().strftime("%d.%m.%Y %H:%M"),
+                                }
+                                st.session_state.inventar.append(neuer)
+                                bestehende.append(art_name.lower())
                                 importiert += 1
+
                             save_json(st.session_state.ws_files["inventar"],
                                       st.session_state.inventar)
-                            if importiert:
-                                st.success(f"✅ {importiert} Artikel importiert!")
-                            if uebersprungen:
+                            if importiert > 0:
+                                st.success(f"✅ {importiert} Artikel erfolgreich importiert!")
+                            if uebersprungen > 0:
                                 st.warning(f"⚠️ {uebersprungen} Zeilen übersprungen.")
                             st.rerun()
+
                 except Exception as e:
                     st.error(f"❌ Fehler beim Lesen der Datei: {e}")
 
+        # ── EXPORT ──────────────────────────────────────────────────────────
         with exp_tab:
             st.markdown("### 📤 Daten exportieren")
-            ec1, ec2 = st.columns(2)
-            with ec1:
-                exp_opt = st.radio("Was exportieren?",
-                                   ["Aktiver Raum", "Alle Räume", "Ausleihhistorie"],
-                                   key="exp_opt")
-            with ec2:
-                exp_fmt = st.radio("Format",
-                                   ["📄 CSV", "📊 Excel (.xlsx)"] if XLSX_AVAILABLE else ["📄 CSV"],
-                                   key="exp_fmt")
+            ex1, ex2 = st.columns(2)
+            with ex1:
+                exp_option = st.radio(
+                    "Was möchtest du exportieren?",
+                    ["Aktiver Raum", "Alle Räume", "Ausleihhistorie"],
+                    key="export_option"
+                )
+            with ex2:
+                exp_format = st.radio(
+                    "Format",
+                    ["📄 CSV", "📊 Excel (.xlsx)"] if XLSX_AVAILABLE else ["📄 CSV"],
+                    key="export_format"
+                )
 
-            if exp_opt == "Aktiver Raum":
-                exp_data = [a for a in st.session_state.inventar
-                            if a["raum"] == st.session_state.aktiver_raum]
-                fname    = f"inventar_{st.session_state.aktiver_raum}"
-            elif exp_opt == "Alle Räume":
-                exp_data = st.session_state.inventar
-                fname    = "inventar_gesamt"
+            if exp_option == "Aktiver Raum":
+                exp_data      = [a for a in st.session_state.inventar
+                                 if a["raum"] == st.session_state.aktiver_raum]
+                filename_base = f"inventar_{st.session_state.aktiver_raum}"
+            elif exp_option == "Alle Räume":
+                exp_data      = st.session_state.inventar
+                filename_base = "inventar_gesamt"
             else:
-                exp_data = st.session_state.ausleihen
-                fname    = "ausleihhistorie"
+                exp_data      = st.session_state.ausleihen
+                filename_base = "ausleihhistorie"
 
             if exp_data:
                 df_exp = pd.DataFrame(exp_data)
-                if exp_fmt == "📄 CSV" or not XLSX_AVAILABLE:
+                if exp_format == "📄 CSV" or not XLSX_AVAILABLE:
+                    csv_exp = df_exp.to_csv(index=False, sep=";", encoding="utf-8-sig")
                     st.download_button(
                         f"📥 CSV herunterladen ({len(exp_data)} Einträge)",
-                        data=df_exp.to_csv(index=False, sep=";", encoding="utf-8-sig"),
-                        file_name=f"{fname}.csv", mime="text/csv"
+                        data=csv_exp, file_name=f"{filename_base}.csv", mime="text/csv"
                     )
                 else:
-                    xbuf = io.BytesIO()
-                    with pd.ExcelWriter(xbuf, engine="openpyxl") as writer:
+                    xlsx_buf = io.BytesIO()
+                    with pd.ExcelWriter(xlsx_buf, engine="openpyxl") as writer:
                         df_exp.to_excel(writer, index=False, sheet_name="Export")
-                    xbuf.seek(0)
+                    xlsx_buf.seek(0)
                     st.download_button(
                         f"📥 Excel herunterladen ({len(exp_data)} Einträge)",
-                        data=xbuf, file_name=f"{fname}.xlsx",
+                        data=xlsx_buf, file_name=f"{filename_base}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
             else:
@@ -1417,65 +1473,66 @@ if hat_recht("benutzerverwaltung"):
 
         with bv1:
             st.markdown("### 👥 Mitglieder dieses Workspaces")
-            users           = load_users()
-            mitglieder      = ws_aktuell.get("mitglieder", [])
-            mitgl_rollen    = ws_aktuell.get("mitglieder_rollen", {})
-            mitgl_info      = ws_aktuell.get("mitglieder_info", {})
+            users            = load_users()
+            mitglieder       = ws_aktuell.get("mitglieder", [])
+            mitglieder_rollen = ws_aktuell.get("mitglieder_rollen", {})
+            mitglieder_info  = ws_aktuell.get("mitglieder_info", {})
 
-            besitzer_obj    = next((u for u in users
-                                    if u["benutzername"] == ws_aktuell["besitzer"]), {})
-            tabelle = [{
-                "Benutzername": ws_aktuell["besitzer"],
-                "Name":         besitzer_obj.get("name", ws_aktuell["besitzer"]),
-                "Rolle":        "👑 Besitzer",
+            besitzer_obj = next((u for u in users
+                                 if u["benutzername"] == ws_aktuell["besitzer"]), {})
+            alle_mitgl = [{
+                "Benutzername":  ws_aktuell["besitzer"],
+                "Name":          besitzer_obj.get("name", ws_aktuell["besitzer"]),
+                "Rolle":         "👑 Besitzer",
                 "Erlaubte Räume": "🌐 Alle Räume",
             }]
             for m in mitglieder:
                 m_obj  = next((u for u in users if u["benutzername"] == m), {})
-                m_info = mitgl_info.get(m, {})
-                tabelle.append({
-                    "Benutzername": m,
-                    "Name":         m_obj.get("name", m),
-                    "Rolle":        ROLLEN_NAMEN.get(mitgl_rollen.get(m, "user"), "user"),
+                m_info = mitglieder_info.get(m, {})
+                alle_mitgl.append({
+                    "Benutzername":   m,
+                    "Name":           m_obj.get("name", m),
+                    "Rolle":          ROLLEN_NAMEN.get(mitglieder_rollen.get(m, "user"), "user"),
                     "Erlaubte Räume": ", ".join(m_info.get("erlaubte_raeume", [])) or "🌐 Alle Räume",
                 })
-            st.dataframe(pd.DataFrame(tabelle), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(alle_mitgl), use_container_width=True, hide_index=True)
 
             if mitglieder:
                 st.divider()
                 st.markdown("#### ❌ Mitglied entfernen")
-                ent_aus = st.selectbox("Mitglied", mitglieder, key="entfernen_aus")
+                entf_aus = st.selectbox("Mitglied", mitglieder, key="entfernen_auswahl")
                 if st.button("Mitglied entfernen", key="btn_entfernen"):
-                    all_ws[ws_idx]["mitglieder"].remove(ent_aus)
-                    all_ws[ws_idx].get("mitglieder_rollen", {}).pop(ent_aus, None)
-                    all_ws[ws_idx].get("mitglieder_info",   {}).pop(ent_aus, None)
+                    all_ws[ws_idx]["mitglieder"].remove(entf_aus)
+                    all_ws[ws_idx].get("mitglieder_rollen", {}).pop(entf_aus, None)
+                    all_ws[ws_idx].get("mitglieder_info",   {}).pop(entf_aus, None)
                     save_workspaces(all_ws)
-                    st.success(f"'{ent_aus}' entfernt!")
+                    st.success(f"'{entf_aus}' wurde entfernt!")
                     st.rerun()
 
                 st.divider()
                 st.markdown("#### 🏠 Raumzugriff & Rolle bearbeiten")
-                em_c1, em_c2 = st.columns(2)
-                with em_c1:
+                em1, em2 = st.columns(2)
+                with em1:
                     edit_m       = st.selectbox("Mitglied", mitglieder, key="edit_mitglied")
-                    akt_rolle    = mitgl_rollen.get(edit_m, "user")
-                    neue_rolle_m = st.selectbox(
-                        "Rolle", ["manager", "user", "viewer"],
+                    aktuelle_r   = mitglieder_rollen.get(edit_m, "user")
+                    rolle_optionen = ["manager", "user", "viewer"]
+                    neue_r       = st.selectbox(
+                        "Rolle", rolle_optionen,
                         format_func=lambda r: ROLLEN_NAMEN[r],
-                        index=["manager","user","viewer"].index(akt_rolle)
-                        if akt_rolle in ["manager","user","viewer"] else 1,
+                        index=rolle_optionen.index(aktuelle_r)
+                        if aktuelle_r in rolle_optionen else 1,
                         key="edit_rolle"
                     )
-                with em_c2:
-                    akt_raeume   = mitgl_info.get(edit_m, {}).get("erlaubte_raeume", [])
-                    neue_raeume  = st.multiselect(
+                with em2:
+                    akt_raeume  = mitglieder_info.get(edit_m, {}).get("erlaubte_raeume", [])
+                    neue_raeume = st.multiselect(
                         "Erlaubte Räume (leer = alle)",
                         st.session_state.raeume,
                         default=akt_raeume,
                         key="edit_raeume"
                     )
                 if st.button("💾 Änderungen speichern", key="btn_edit_mitglied"):
-                    all_ws[ws_idx].setdefault("mitglieder_rollen", {})[edit_m] = neue_rolle_m
+                    all_ws[ws_idx].setdefault("mitglieder_rollen", {})[edit_m] = neue_r
                     all_ws[ws_idx].setdefault("mitglieder_info",   {}).setdefault(
                         edit_m, {})["erlaubte_raeume"] = neue_raeume
                     save_workspaces(all_ws)
@@ -1484,50 +1541,58 @@ if hat_recht("benutzerverwaltung"):
 
         with bv2:
             st.markdown("### 🔗 Workspace teilen")
-            st.markdown("Teile diese Workspace-ID mit Personen, die beitreten sollen:")
+            st.markdown("Teile die folgende Workspace-ID mit Personen, die beitreten sollen:")
             st.code(ws_aktuell["id"], language=None)
+            st.caption("Die Person kann die ID auf der Workspace-Auswahlseite unter "
+                       "'Workspace beitreten' eingeben.")
 
             st.divider()
             st.markdown("#### ➕ Benutzer direkt hinzufügen")
             users = load_users()
-            nicht_m = [u for u in users
-                       if u["benutzername"] != ws_aktuell["besitzer"]
-                       and u["benutzername"] not in ws_aktuell.get("mitglieder", [])]
-            if nicht_m:
-                dh_labels  = [f"{u['name']} ({u['benutzername']})" for u in nicht_m]
-                dh_aus     = st.selectbox("Benutzer", dh_labels, key="direkt_hinzu")
-                dh_user    = nicht_m[dh_labels.index(dh_aus)]
-                dh_rolle   = st.selectbox("Rolle", ["manager","user","viewer"],
-                                           format_func=lambda r: ROLLEN_NAMEN[r],
-                                           key="direkt_rolle")
-                dh_raeume  = st.multiselect("Erlaubte Räume (leer = alle)",
-                                             st.session_state.raeume, key="direkt_raeume")
+            nicht_mitgl = [u for u in users
+                           if u["benutzername"] != ws_aktuell["besitzer"]
+                           and u["benutzername"] not in ws_aktuell.get("mitglieder", [])]
+            if nicht_mitgl:
+                dh_labels = [f"{u['name']} ({u['benutzername']})" for u in nicht_mitgl]
+                dh_aus    = st.selectbox("Benutzer auswählen", dh_labels, key="direkt_hinzu")
+                dh_user   = nicht_mitgl[dh_labels.index(dh_aus)]
+                dh_rolle  = st.selectbox(
+                    "Rolle zuweisen", ["manager", "user", "viewer"],
+                    format_func=lambda r: ROLLEN_NAMEN[r], key="direkt_rolle"
+                )
+                dh_raeume = st.multiselect(
+                    "Erlaubte Räume (leer = alle)",
+                    st.session_state.raeume, key="direkt_raeume"
+                )
                 if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
-                    all_ws[ws_idx].setdefault("mitglieder", []).append(dh_user["benutzername"])
-                    all_ws[ws_idx].setdefault("mitglieder_rollen", {})[dh_user["benutzername"]] = dh_rolle
-                    all_ws[ws_idx].setdefault("mitglieder_info",   {})[dh_user["benutzername"]] = {
-                        "erlaubte_raeume": dh_raeume
-                    }
+                    all_ws[ws_idx].setdefault("mitglieder", []).append(
+                        dh_user["benutzername"])
+                    all_ws[ws_idx].setdefault("mitglieder_rollen", {})[
+                        dh_user["benutzername"]] = dh_rolle
+                    all_ws[ws_idx].setdefault("mitglieder_info", {})[
+                        dh_user["benutzername"]] = {"erlaubte_raeume": dh_raeume}
                     save_workspaces(all_ws)
-                    st.success(f"'{dh_user['name']}' hinzugefügt!")
+                    st.success(f"'{dh_user['name']}' wurde hinzugefügt!")
                     st.rerun()
             else:
                 st.info("Alle registrierten Benutzer sind bereits Mitglied.")
 
         with bv3:
             st.markdown("### ⚙️ Workspace-Einstellungen")
-            new_ws_name  = st.text_input("Workspace-Name",  value=ws_aktuell["name"])
-            new_ws_beschr= st.text_input("Beschreibung",    value=ws_aktuell.get("beschreibung",""))
-            new_ws_pw    = st.text_input("Neues Passwort (leer = unverändert)", type="password")
-            pw_entf      = st.checkbox("Passwortschutz entfernen")
+            neuer_ws_name  = st.text_input("Workspace-Name", value=ws_aktuell["name"])
+            neue_ws_beschr = st.text_input("Beschreibung",
+                                            value=ws_aktuell.get("beschreibung", ""))
+            neues_ws_pw    = st.text_input(
+                "Neues Passwort (leer lassen = unverändert)", type="password")
+            pw_entfernen   = st.checkbox("Passwortschutz entfernen")
 
             if st.button("💾 Einstellungen speichern"):
-                all_ws[ws_idx]["name"]         = new_ws_name.strip()
-                all_ws[ws_idx]["beschreibung"]  = new_ws_beschr.strip()
-                if pw_entf:
+                all_ws[ws_idx]["name"]        = neuer_ws_name.strip()
+                all_ws[ws_idx]["beschreibung"] = neue_ws_beschr.strip()
+                if pw_entfernen:
                     all_ws[ws_idx]["passwort"] = None
-                elif new_ws_pw.strip():
-                    all_ws[ws_idx]["passwort"] = hash_passwort(new_ws_pw.strip())
+                elif neues_ws_pw.strip():
+                    all_ws[ws_idx]["passwort"] = hash_passwort(neues_ws_pw.strip())
                 save_workspaces(all_ws)
                 st.session_state.aktiver_workspace = all_ws[ws_idx]
                 st.success("Einstellungen gespeichert!")
@@ -1537,9 +1602,11 @@ if hat_recht("benutzerverwaltung"):
             st.markdown("#### 🗑️ Workspace löschen")
             st.warning("⚠️ Diese Aktion kann nicht rückgängig gemacht werden!")
             if st.button("🗑️ Workspace endgültig löschen", type="primary"):
-                save_workspaces([w for w in all_ws if w["id"] != ws_aktuell["id"]])
+                all_ws = [w for w in all_ws if w["id"] != ws_aktuell["id"]]
+                save_workspaces(all_ws)
                 st.session_state.aktiver_workspace = None
-                for k in ["inventar","raeume","kategorien","ausleihen","ws_files","aktiver_raum"]:
+                for k in ["inventar", "raeume", "kategorien", "ausleihen",
+                          "ws_files", "aktiver_raum"]:
                     st.session_state.pop(k, None)
                 st.rerun()
 
