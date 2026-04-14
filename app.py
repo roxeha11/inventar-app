@@ -615,7 +615,23 @@ with st.sidebar:
     barcode_nr = st.text_input("Barcode-Nr. (optional)", placeholder="z.B. 4012345678901")
     notiz = st.text_area("Notiz (optional)")
 
-    zusatz_werte = render_zusatzfelder(kategorie, prefix="neu")
+    # Kategorie-spezifische Zusatzfelder direkt in der Sidebar
+    zusatz_felder_sidebar = KATEGORIE_FELDER.get(kategorie, [])
+    zusatz_werte = {}
+    if zusatz_felder_sidebar:
+        st.markdown(f"**📋 Zusatzfelder – {kategorie}:**")
+        for feld in zusatz_felder_sidebar:
+            key_sidebar = f"neu_sidebar_{feld['key']}"
+            if feld["typ"] == "select":
+                zusatz_werte[feld["key"]] = st.selectbox(
+                    feld["label"], feld["optionen"], key=key_sidebar
+                )
+            else:
+                zusatz_werte[feld["key"]] = st.text_input(
+                    feld["label"],
+                    placeholder=feld.get("placeholder", ""),
+                    key=key_sidebar
+                )
 
     if st.button("✅ Artikel hinzufügen"):
         if name.strip() == "":
@@ -1496,4 +1512,3 @@ if hat_recht("benutzerverwaltung"):
                 st.rerun()
 
 st.markdown("---")
-st.markdown("🤖 **EVA** – Inventarisierungs-App | Erstellt mit Python & Streamlit")
