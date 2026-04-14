@@ -251,8 +251,8 @@ for _k, _v in [
 # LOGIN
 # =============================================
 if not st.session_state.eingeloggt:
-    st.set_page_config(page_title="Login – EVA", page_icon="🔐", layout="centered")
-    st.title("🔐 EVA Inventarisierungs-App")
+    st.set_page_config(page_title="Login", page_icon="🔐", layout="centered")
+    st.title("🔐 Inventarisierungs-App")
     st.markdown("Bitte melde dich an oder erstelle einen neuen Account.")
     st.divider()
 
@@ -777,7 +777,7 @@ tab_index = {name: i for i, name in enumerate(tab_namen)}
 with tabs[tab_index["📋 Inventar"]]:
     st.subheader(f"📋 Inventar – {st.session_state.aktiver_raum}")
 
-    fc1, fc2, fc3 = st.columns(3)
+    fc1, fc2, fc3, fc4 = st.columns(4)
     with fc1:
         suche = st.text_input("🔍 Artikel suchen", placeholder="z.B. Laptop...")
     with fc2:
@@ -785,6 +785,12 @@ with tabs[tab_index["📋 Inventar"]]:
     with fc3:
         filter_status = st.selectbox("Status filtern",
                                       ["Alle", "✅ Verfügbar", "🔴 Ausgeliehen"])
+    with fc4:
+        sort_option = st.selectbox("🔃 Sortierung",
+                                   ["Standard", "Name ↑", "Name ↓",
+                                    "Preis ↑", "Preis ↓",
+                                    "Menge ↑", "Menge ↓",
+                                    "Datum ↑", "Datum ↓"])
 
     filter_zusatz = {}
     if filter_kat != "Alle" and filter_kat in KATEGORIE_FELDER:
@@ -817,6 +823,21 @@ with tabs[tab_index["📋 Inventar"]]:
     elif filter_status == "🔴 Ausgeliehen":
         raum_inventar = [a for a in raum_inventar
                          if a.get("verfuegbar", a["menge"]) < a["menge"]]
+
+    # Sortierung
+    sort_key_map = {
+        "Name ↑":   (lambda a: a["name"].lower(),  False),
+        "Name ↓":   (lambda a: a["name"].lower(),  True),
+        "Preis ↑":  (lambda a: a["preis"],          False),
+        "Preis ↓":  (lambda a: a["preis"],          True),
+        "Menge ↑":  (lambda a: a["menge"],          False),
+        "Menge ↓":  (lambda a: a["menge"],          True),
+        "Datum ↑":  (lambda a: a.get("datum", ""), False),
+        "Datum ↓":  (lambda a: a.get("datum", ""), True),
+    }
+    if sort_option in sort_key_map:
+        sk, sr = sort_key_map[sort_option]
+        raum_inventar = sorted(raum_inventar, key=sk, reverse=sr)
 
     if raum_inventar:
         st.markdown(f"**{len(raum_inventar)} Artikel gefunden**")
@@ -868,21 +889,71 @@ with tabs[tab_index["📋 Inventar"]]:
         st.info(f"Keine Artikel in Raum '{st.session_state.aktiver_raum}' gefunden.")
 
     st.divider()
-    st.subheader("🗑️ Artikel löschen")
-    alle_raum = [a for a in st.session_state.inventar
-                 if a["raum"] == st.session_state.aktiver_raum]
-    if alle_raum:
-        art_namen = [f"#{a.get('laufnummer', '?')} – {a['name']}" for a in alle_raum]
-        auswahl   = st.selectbox("Artikel auswählen", art_namen)
-        if st.button("❌ Artikel löschen"):
-            del_id = alle_raum[art_namen.index(auswahl)]["id"]
-            st.session_state.inventar = [a for a in st.session_state.inventar
-                                          if a["id"] != del_id]
-            save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
-            st.success("Artikel gelöscht!")
-            st.rerun()
-    else:
-        st.info("Keine Artikel zum Löschen vorhanden.")
+    loeschen_tab, verschieben_tab = st.tabs(["🗑️ Artikel löschen", "📦 Artikel verschieben"])
+
+    with loeschen_tab:
+        st.subheader("🗑️ Artikel löschen")
+        alle_raum = [a for a in st.session_state.inventar
+                     if a["raum"] == st.session_state.aktiver_raum]
+        if alle_raum:
+            st.markdown("**Mehrfachauswahl:** Wähle einen oder mehrere Artikel zum Löschen aus.")
+            art_optionen = {f"#{a.get('laufnummer', '?')} – {a['name']}": a["id"]
+                            for a in alle_raum}
+            multi_auswahl = st.multiselect(
+                "Artikel auswählen", list(art_optionen.keys()),
+                key="multi_loeschen"
+            )
+            if multi_auswahl:
+                st.warning(f"⚠️ {len(multi_auswahl)} Artikel werden gelöscht!")
+                if st.button(f"❌ {len(multi_auswahl)} Artikel löschen", type="primary"):
+                    ids_loeschen = {art_optionen[n] for n in multi_auswahl}
+                    st.session_state.inventar = [
+                        a for a in st.session_state.inventar
+                        if a["id"] not in ids_loeschen
+                    ]
+                    save_json(st.session_state.ws_files["inventar"], st.session_state.inventar)
+                    st.success(f"✅ {len(ids_loeschen)} Artikel gelöscht!")
+                    st.rerun()
+        else:
+            st.info("Keine Artikel zum Löschen vorhanden.")
+
+    with verschieben_tab:
+        st.subheader("📦 Artikel zwischen Räumen verschieben")
+        alle_raum_v = [a for a in st.session_state.inventar
+                       if a["raum"] == st.session_state.aktiver_raum]
+        if alle_raum_v and len(st.session_state.raeume) > 1:
+            v1, v2, v3 = st.columns([2, 1, 1])
+            with v1:
+                v_optionen = {f"#{a.get('laufnummer', '?')} – {a['name']}": a["id"]
+                              for a in alle_raum_v}
+                v_auswahl = st.multiselect(
+                    "Artikel auswählen", list(v_optionen.keys()),
+                    key="multi_verschieben"
+                )
+            with v2:
+                ziel_raeume = [r for r in st.session_state.raeume
+                               if r != st.session_state.aktiver_raum]
+                ziel_raum = st.selectbox("🏠 Ziel-Raum", ziel_raeume, key="ziel_raum")
+            with v3:
+                st.markdown("&nbsp;", unsafe_allow_html=True)
+                if st.button("➡️ Verschieben", type="primary",
+                             use_container_width=True, key="btn_verschieben"):
+                    if v_auswahl:
+                        ids_verschieben = {v_optionen[n] for n in v_auswahl}
+                        for a in st.session_state.inventar:
+                            if a["id"] in ids_verschieben:
+                                a["raum"] = ziel_raum
+                        save_json(st.session_state.ws_files["inventar"],
+                                  st.session_state.inventar)
+                        st.success(f"✅ {len(ids_verschieben)} Artikel nach "
+                                   f"'{ziel_raum}' verschoben!")
+                        st.rerun()
+                    else:
+                        st.warning("Bitte mindestens einen Artikel auswählen.")
+        elif len(st.session_state.raeume) <= 1:
+            st.info("Es muss mindestens einen weiteren Raum geben, um Artikel zu verschieben.")
+        else:
+            st.info("Keine Artikel im aktuellen Raum vorhanden.")
 
 # -----------------------------------------------
 # TAB: Artikel hinzufügen
@@ -1231,8 +1302,8 @@ if hat_recht("statistiken"):
 # -----------------------------------------------
 # TAB: Export / Import
 # -----------------------------------------------
-if hat_recht("export"):
-    with tabs[tab_index["📤 Export"]]:
+if hat_recht("export/import"):
+    with tabs[tab_index["📤 Export/Import"]]:
         st.subheader("📤 Import & Export")
         imp_tab, exp_tab = st.tabs(["📥 Import", "📤 Export"])
 
@@ -1450,8 +1521,9 @@ if hat_recht("benutzerverwaltung"):
         ws_idx     = next((i for i, w in enumerate(all_ws)
                            if w["id"] == ws_aktuell["id"]), None)
 
-        bv1, bv2, bv3 = st.tabs(["👥 Mitglieder", "🔗 Workspace teilen",
-                                   "⚙️ Workspace-Einstellungen"])
+        bv1, bv2, bv3, bv4 = st.tabs(["👥 Mitglieder", "🔗 Workspace teilen",
+                                "⚙️ Workspace-Einstellungen", "🔑 Passwort ändern"])
+
 
         with bv1:
             st.markdown("### 👥 Mitglieder dieses Workspaces")
@@ -1575,6 +1647,30 @@ if hat_recht("benutzerverwaltung"):
                         st.warning("⚠️ Benutzer ist bereits Mitglied!")
             else:
                 st.info("Alle registrierten Benutzer sind bereits Mitglied.")
+          with bv4:
+              st.markdown("### 🔑 Eigenes Passwort ändern")
+              with st.form("pw_aendern_form"):
+                  pw_alt  = st.text_input("🔐 Aktuelles Passwort",        type="password")
+                  pw_neu1 = st.text_input("🔑 Neues Passwort",             type="password")
+                  pw_neu2 = st.text_input("🔑 Neues Passwort wiederholen", type="password")
+                  pw_btn  = st.form_submit_button("💾 Passwort ändern", type="primary",
+                                                  use_container_width=True)
+              if pw_btn:
+                  users_pw = load_users()
+                  user_pw_obj = next((u for u in users_pw
+                                      if u["benutzername"] == st.session_state.benutzername), None)
+                  if not user_pw_obj:
+                      st.error("❌ Benutzer nicht gefunden.")
+                  elif user_pw_obj["passwort"] != hash_passwort(pw_alt):
+                      st.error("❌ Das aktuelle Passwort ist falsch!")
+                  elif len(pw_neu1) < 6:
+                      st.error("❌ Das neue Passwort muss mindestens 6 Zeichen haben!")
+                  elif pw_neu1 != pw_neu2:
+                      st.error("❌ Die neuen Passwörter stimmen nicht überein!")
+                  else:
+                      user_pw_obj["passwort"] = hash_passwort(pw_neu1)
+                      save_json(USERS_FILE, users_pw)
+                      st.success("✅ Passwort erfolgreich geändert!")
 
         with bv3:
             st.markdown("### ⚙️ Workspace-Einstellungen")
@@ -1610,4 +1706,4 @@ if hat_recht("benutzerverwaltung"):
                 st.rerun()
 
 st.markdown("---")
-
+st.markdown("🤖 **EVA** – Inventarisierungs-App | Erstellt mit Python & Streamlit")
