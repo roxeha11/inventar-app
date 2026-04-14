@@ -364,11 +364,11 @@ if st.session_state.aktiver_workspace is None:
     st.divider()
     st.markdown("### ➕ Neuen Workspace erstellen")
     with st.form("ws_erstellen_form"):
-        ws_name  = st.text_input("📝 Name", placeholder="z.B. Zuhause, Arbeit, Lager...")
+        ws_name   = st.text_input("📝 Name", placeholder="z.B. Zuhause, Arbeit, Lager...")
         ws_beschr = st.text_input("💬 Beschreibung (optional)")
-        ws_pw    = st.text_input("🔒 Passwort (optional)", type="password")
-        ws_btn   = st.form_submit_button("✅ Workspace erstellen", type="primary",
-                                          use_container_width=True)
+        ws_pw     = st.text_input("🔒 Passwort (optional)", type="password")
+        ws_btn    = st.form_submit_button("✅ Workspace erstellen", type="primary",
+                                           use_container_width=True)
     if ws_btn:
         if not ws_name.strip():
             st.error("Bitte einen Namen eingeben!")
@@ -619,7 +619,6 @@ if st.session_state.detail_artikel_id is not None:
                         e_notiz   = st.text_area("Notiz",
                                                   value=artikel_detail.get("notiz", "") or "")
 
-                        # Zusatzfelder im Edit-Formular
                         e_zusatz_werte = {}
                         edit_felder = KATEGORIE_FELDER.get(e_kat, [])
                         if edit_felder:
@@ -687,7 +686,6 @@ if st.session_state.detail_artikel_id is not None:
                     else:
                         status = f"⚠️ Teils verfügbar ({verfuegbar}/{artikel_detail['menge']})"
 
-                    # Zusatzfelder anzeigen
                     zusatz     = artikel_detail.get("zusatz", {})
                     felder_def = KATEGORIE_FELDER.get(artikel_detail["kategorie"], [])
                     if zusatz and felder_def:
@@ -730,7 +728,6 @@ if st.session_state.detail_artikel_id is not None:
                         st.success("Notiz gespeichert!")
                         st.rerun()
 
-            # Ausleihhistorie
             artikel_ausleihen = [a for a in st.session_state.ausleihen
                                   if a["artikel_id"] == artikel_detail["id"]]
             if artikel_ausleihen:
@@ -789,7 +786,6 @@ with tabs[tab_index["📋 Inventar"]]:
         filter_status = st.selectbox("Status filtern",
                                       ["Alle", "✅ Verfügbar", "🔴 Ausgeliehen"])
 
-    # Dynamische Zusatzfilter
     filter_zusatz = {}
     if filter_kat != "Alle" and filter_kat in KATEGORIE_FELDER:
         select_felder = [f for f in KATEGORIE_FELDER[filter_kat] if f["typ"] == "select"]
@@ -844,7 +840,6 @@ with tabs[tab_index["📋 Inventar"]]:
                         st.caption(
                             f"Menge: {a['menge']} | Verfügbar: {verfuegbar} | {a['preis']:.2f} €")
 
-                        # Zusatzinfos auf der Karte anzeigen
                         z_karte = a.get("zusatz", {})
                         f_karte = KATEGORIE_FELDER.get(a["kategorie"], [])
                         if z_karte and f_karte:
@@ -891,16 +886,11 @@ with tabs[tab_index["📋 Inventar"]]:
 
 # -----------------------------------------------
 # TAB: Artikel hinzufügen
-# SCHLÜSSEL-FIX: Kategorie ZUERST rendern (außerhalb st.columns),
-# dann Zusatzfelder basierend auf der Auswahl rendern.
-# So reagiert Streamlit sofort ohne st.rerun().
 # -----------------------------------------------
 with tabs[tab_index["➕ Artikel hinzufügen"]]:
     st.subheader(f"➕ Neuen Artikel hinzufügen – Raum: {st.session_state.aktiver_raum}")
 
     with st.container(border=True):
-
-        # ── SCHRITT 1: Kategorie ZUERST auswählen (kein st.columns hier!) ──
         neu_kat = st.selectbox(
             "🗂️ Kategorie auswählen",
             st.session_state.kategorien,
@@ -909,7 +899,6 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
 
         st.divider()
 
-        # ── SCHRITT 2: Grundfelder ──────────────────────────────────────────
         h1, h2 = st.columns(2)
         with h1:
             neu_name = st.text_input("📦 Artikelname",
@@ -929,9 +918,6 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
 
         neu_notiz = st.text_area("📝 Notiz (optional)", key="neu_notiz")
 
-        # ── SCHRITT 3: Kategorie-spezifische Zusatzfelder ──────────────────
-        # Da neu_kat bereits oben gerendert wurde, reagiert dieser Block
-        # sofort wenn der Benutzer die Kategorie wechselt – kein Rerun nötig!
         neu_zusatz = {}
         kat_felder = KATEGORIE_FELDER.get(neu_kat, [])
         if kat_felder:
@@ -952,7 +938,6 @@ with tabs[tab_index["➕ Artikel hinzufügen"]]:
 
         st.divider()
 
-        # ── SCHRITT 4: Speichern ────────────────────────────────────────────
         if st.button("✅ Artikel hinzufügen", type="primary",
                      use_container_width=True, key="btn_neu_hinzu"):
             if not neu_name.strip():
@@ -1251,7 +1236,6 @@ if hat_recht("export"):
         st.subheader("📤 Import & Export")
         imp_tab, exp_tab = st.tabs(["📥 Import", "📤 Export"])
 
-        # ── IMPORT ──────────────────────────────────────────────────────────
         with imp_tab:
             st.markdown("### 📥 Artikel aus Excel oder CSV importieren")
 
@@ -1305,7 +1289,6 @@ if hat_recht("export"):
                     if upload_file.name.endswith(".xlsx"):
                         df_import = pd.read_excel(upload_file, dtype=str)
                     else:
-                        # Robuste Encoding-Erkennung für CSV-Dateien
                         raw_bytes = upload_file.read()
                         df_import = None
                         for enc in ["utf-8-sig", "utf-8", "latin-1", "cp1252", "iso-8859-1"]:
@@ -1407,7 +1390,6 @@ if hat_recht("export"):
                 except Exception as e:
                     st.error(f"❌ Fehler beim Lesen der Datei: {e}")
 
-        # ── EXPORT ──────────────────────────────────────────────────────────
         with exp_tab:
             st.markdown("### 📤 Daten exportieren")
             ex1, ex2 = st.columns(2)
@@ -1473,28 +1455,27 @@ if hat_recht("benutzerverwaltung"):
 
         with bv1:
             st.markdown("### 👥 Mitglieder dieses Workspaces")
-            users            = load_users()
-            # FIX 1: Duplikate automatisch bereinigen
-             # KORREKT:
-              # FIX 1: Duplikate automatisch bereinigen
-      mitglieder_raw = ws_aktuell.get("mitglieder", [])
-         mitglieder = list(dict.fromkeys(mitglieder_raw))
-          if len(mitglieder) != len(mitglieder_raw):
-             _fix = load_workspaces()
-             _i = next((i for i, w in enumerate(_fix) if w["id"] == ws_aktuell["id"]), None)
-             if _i is not None:
-                   _fix[_i]["mitglieder"] = mitglieder
-                save_workspaces(_fix)
+            users = load_users()
+
+            # FIX: Duplikate automatisch bereinigen
+            mitglieder_raw = ws_aktuell.get("mitglieder", [])
+            mitglieder = list(dict.fromkeys(mitglieder_raw))
+            if len(mitglieder) != len(mitglieder_raw):
+                _fix = load_workspaces()
+                _i = next((i for i, w in enumerate(_fix) if w["id"] == ws_aktuell["id"]), None)
+                if _i is not None:
+                    _fix[_i]["mitglieder"] = mitglieder
+                    save_workspaces(_fix)
 
             mitglieder_rollen = ws_aktuell.get("mitglieder_rollen", {})
-            mitglieder_info  = ws_aktuell.get("mitglieder_info", {})
+            mitglieder_info   = ws_aktuell.get("mitglieder_info", {})
 
             besitzer_obj = next((u for u in users
                                  if u["benutzername"] == ws_aktuell["besitzer"]), {})
             alle_mitgl = [{
-                "Benutzername":  ws_aktuell["besitzer"],
-                "Name":          besitzer_obj.get("name", ws_aktuell["besitzer"]),
-                "Rolle":         "👑 Besitzer",
+                "Benutzername":   ws_aktuell["besitzer"],
+                "Name":           besitzer_obj.get("name", ws_aktuell["besitzer"]),
+                "Rolle":          "👑 Besitzer",
                 "Erlaubte Räume": "🌐 Alle Räume",
             }]
             for m in mitglieder:
@@ -1513,10 +1494,10 @@ if hat_recht("benutzerverwaltung"):
                 st.markdown("#### ❌ Mitglied entfernen")
                 entf_aus = st.selectbox("Mitglied", mitglieder, key="entfernen_auswahl")
                 if st.button("Mitglied entfernen", key="btn_entfernen"):
-                    # FIX 2: Sicheres Entfernen ohne ValueError
-                      all_ws[ws_idx]["mitglieder"] = [
-                          m for m in all_ws[ws_idx]["mitglieder"] if m != entf_aus
-                      ]
+                    # FIX: Sicheres Entfernen ohne ValueError
+                    all_ws[ws_idx]["mitglieder"] = [
+                        m for m in all_ws[ws_idx]["mitglieder"] if m != entf_aus
+                    ]
                     all_ws[ws_idx].get("mitglieder_rollen", {}).pop(entf_aus, None)
                     all_ws[ws_idx].get("mitglieder_info",   {}).pop(entf_aus, None)
                     save_workspaces(all_ws)
@@ -1578,22 +1559,20 @@ if hat_recht("benutzerverwaltung"):
                     "Erlaubte Räume (leer = alle)",
                     st.session_state.raeume, key="direkt_raeume"
                 )
-               # NEU:
-if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
-    # FIX 3: Doppeltes Hinzufügen verhindern
-    if dh_user["benutzername"] not in all_ws[ws_idx].get("mitglieder", []):
-        all_ws[ws_idx].setdefault("mitglieder", []).append(
-            dh_user["benutzername"])
-        all_ws[ws_idx].setdefault("mitglieder_rollen", {})[
-            dh_user["benutzername"]] = dh_rolle
-        all_ws[ws_idx].setdefault("mitglieder_info", {})[
-            dh_user["benutzername"]] = {"erlaubte_raeume": dh_raeume}
-        save_workspaces(all_ws)
-        st.success(f"'{dh_user['name']}' wurde hinzugefügt!")
-        st.rerun()
-    else:
-        st.warning("⚠️ Benutzer ist bereits Mitglied!")
-
+                if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
+                    # FIX: Doppeltes Hinzufügen verhindern
+                    if dh_user["benutzername"] not in all_ws[ws_idx].get("mitglieder", []):
+                        all_ws[ws_idx].setdefault("mitglieder", []).append(
+                            dh_user["benutzername"])
+                        all_ws[ws_idx].setdefault("mitglieder_rollen", {})[
+                            dh_user["benutzername"]] = dh_rolle
+                        all_ws[ws_idx].setdefault("mitglieder_info", {})[
+                            dh_user["benutzername"]] = {"erlaubte_raeume": dh_raeume}
+                        save_workspaces(all_ws)
+                        st.success(f"'{dh_user['name']}' wurde hinzugefügt!")
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ Benutzer ist bereits Mitglied!")
             else:
                 st.info("Alle registrierten Benutzer sind bereits Mitglied.")
 
@@ -1607,8 +1586,8 @@ if st.button("✅ Hinzufügen", key="btn_direkt_hinzu"):
             pw_entfernen   = st.checkbox("Passwortschutz entfernen")
 
             if st.button("💾 Einstellungen speichern"):
-                all_ws[ws_idx]["name"]        = neuer_ws_name.strip()
-                all_ws[ws_idx]["beschreibung"] = neue_ws_beschr.strip()
+                all_ws[ws_idx]["name"]         = neuer_ws_name.strip()
+                all_ws[ws_idx]["beschreibung"]  = neue_ws_beschr.strip()
                 if pw_entfernen:
                     all_ws[ws_idx]["passwort"] = None
                 elif neues_ws_pw.strip():
