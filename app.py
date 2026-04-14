@@ -1235,6 +1235,51 @@ if hat_recht("checkout"):
                 csv_hist = df_hist.to_csv(index=False, sep=";", encoding="utf-8-sig")
                 st.download_button("📥 Historie als CSV", csv_hist,
                                    "ausleihhistorie.csv", "text/csv")
+
+                  st.divider()
+                  st.markdown("#### 🗑️ Einträge löschen")
+
+                  with st.expander("🗑️ Einzelne Einträge löschen"):
+                      losch_labels = {
+                          f"{a['checkout_datum']} | {a['artikel_name']} → {a['person']} [{a['status']}]": a["ausleihe_id"]
+                          for a in hist
+                      }
+                      multi_hist = st.multiselect(
+                          "Einträge auswählen",
+                          list(losch_labels.keys()),
+                          key="hist_multi_loeschen"
+                      )
+                      if multi_hist:
+                          st.warning(f"⚠️ {len(multi_hist)} Eintrag/Einträge werden gelöscht!")
+                          if st.button(f"❌ {len(multi_hist)} Eintrag/Einträge löschen",
+                                       type="primary", key="btn_hist_einzel_del"):
+                              ids_del = {losch_labels[l] for l in multi_hist}
+                              st.session_state.ausleihen = [
+                                  a for a in st.session_state.ausleihen
+                                  if a["ausleihe_id"] not in ids_del
+                              ]
+                              save_json(st.session_state.ws_files["ausleihen"],
+                                        st.session_state.ausleihen)
+                              st.success(f"✅ {len(ids_del)} Eintrag/Einträge gelöscht!")
+                              st.rerun()
+
+                  with st.expander("🔥 Gesamte Historie löschen"):
+                      st.error(
+                          "⚠️ **Achtung:** Dies löscht **alle** Einträge der Ausleihhistorie "
+                          "unwiderruflich."
+                      )
+                      bestaetigung = st.text_input(
+                          "Tippe LÖSCHEN zur Bestätigung", key="hist_gesamt_confirm"
+                      )
+                      if st.button("🔥 Gesamte Historie löschen", type="primary",
+                                   key="btn_hist_gesamt_del"):
+                          if bestaetigung.strip() == "LÖSCHEN":
+                              st.session_state.ausleihen = []
+                              save_json(st.session_state.ws_files["ausleihen"], [])
+                              st.success("✅ Gesamte Historie gelöscht!")
+                              st.rerun()
+                          else:
+                              st.error("❌ Bitte tippe 'LÖSCHEN' zur Bestätigung.")
             else:
                 st.info("Keine Einträge gefunden.")
 
@@ -1747,3 +1792,4 @@ if hat_recht("benutzerverwaltung"):
                 st.rerun()
 
 st.markdown("---")
+st.markdown("🤖 **EVA** – Inventarisierungs-App | Erstellt mit Python & Streamlit")
