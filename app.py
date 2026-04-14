@@ -9,6 +9,11 @@ import hashlib
 import uuid
 from PIL import Image
 from datetime import datetime
+try:
+    import openpyxl
+    XLSX_AVAILABLE = True
+except ImportError:
+    XLSX_AVAILABLE = False
 # Barcode-Scanner (nur lokal verfügbar)
 try:
     from streamlit_quagga import quagga
@@ -1133,3 +1138,4 @@ if hat_recht("benutzerverwaltung"):
         st.dataframe(df_users, use_container_width=True, hide_index=True)
 
 st.markdown("---")
+st.markdown("🤖 **EVA** - Inventarisierungs-App | Erstellt mit Python & Streamlit")
