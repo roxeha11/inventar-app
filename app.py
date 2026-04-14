@@ -208,29 +208,71 @@ if "ws_files" not in st.session_state:
 if not st.session_state.eingeloggt:
     st.set_page_config(page_title="Login – Inventarisierungs-App", page_icon="🔐", layout="centered")
     st.title("🔐 Inventarisierungs-App")
-    st.markdown("Bitte melde dich an, um fortzufahren.")
+    st.markdown("Bitte melde dich an oder erstelle einen neuen Account.")
     st.divider()
 
-    with st.form("login_form"):
-        benutzername = st.text_input("👤 Benutzername")
-        passwort = st.text_input("🔑 Passwort", type="password")
-        login_btn = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
+    login_tab, register_tab = st.tabs(["🔐 Anmelden", "📝 Registrieren"])
 
-    if login_btn:
-        users = load_users()
-        user = next((u for u in users if u["benutzername"] == benutzername and u["passwort"] == hash_passwort(passwort)), None)
-        if user:
-            st.session_state.eingeloggt = True
-            st.session_state.benutzername = user["benutzername"]
-            st.session_state.rolle = user["rolle"]
-            st.session_state.benutzer_name = user["name"]
-            st.session_state.erlaubte_raeume = user.get("erlaubte_raeume", [])
-            st.rerun()
-        else:
-            st.error("❌ Benutzername oder Passwort falsch!")
+    # --- ANMELDEN ---
+    with login_tab:
+        with st.form("login_form"):
+            benutzername = st.text_input("👤 Benutzername")
+            passwort = st.text_input("🔑 Passwort", type="password")
+            login_btn = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
 
-    st.divider()
-    st.caption("🔒 Standard-Login beim ersten Start: Benutzer `admin` / Passwort `admin123`")
+        if login_btn:
+            users = load_users()
+            user = next((u for u in users if u["benutzername"] == benutzername and u["passwort"] == hash_passwort(passwort)), None)
+            if user:
+                st.session_state.eingeloggt = True
+                st.session_state.benutzername = user["benutzername"]
+                st.session_state.rolle = user["rolle"]
+                st.session_state.benutzer_name = user["name"]
+                st.session_state.erlaubte_raeume = user.get("erlaubte_raeume", [])
+                st.rerun()
+            else:
+                st.error("❌ Benutzername oder Passwort falsch!")
+
+        st.divider()
+        st.caption("💡 Noch kein Account? Wechsle zum Tab 'Registrieren'.")
+
+    # --- REGISTRIEREN ---
+    with register_tab:
+        st.markdown("Erstelle deinen persönlichen Account. Jeder neue Benutzer startet ohne Sonderrechte.")
+        with st.form("register_form"):
+            reg_name = st.text_input("👤 Vollständiger Name", placeholder="z.B. Max Mustermann")
+            reg_benutzername = st.text_input("👤 Benutzername", placeholder="z.B. max.mustermann")
+            reg_passwort = st.text_input("🔑 Passwort wählen", type="password")
+            reg_passwort2 = st.text_input("🔑 Passwort wiederholen", type="password")
+            reg_btn = st.form_submit_button("✅ Account erstellen", type="primary", use_container_width=True)
+
+        if reg_btn:
+            users = load_users()
+            if not reg_name.strip() or not reg_benutzername.strip() or not reg_passwort.strip():
+                st.error("❌ Bitte alle Felder ausfüllen!")
+            elif reg_passwort != reg_passwort2:
+                st.error("❌ Die Passwörter stimmen nicht überein!")
+            elif len(reg_passwort) < 6:
+                st.error("❌ Das Passwort muss mindestens 6 Zeichen lang sein!")
+            elif any(u["benutzername"] == reg_benutzername.strip() for u in users):
+                st.warning("⚠️ Dieser Benutzername ist bereits vergeben!")
+            else:
+                neuer_user = {
+                    "benutzername": reg_benutzername.strip(),
+                    "passwort": hash_passwort(reg_passwort),
+                    "rolle": "user",  # Neue Benutzer starten immer als 'user'
+                    "name": reg_name.strip(),
+                    "erlaubte_raeume": [],
+                    "registriert_am": datetime.now().strftime("%d.%m.%Y %H:%M")
+                }
+                users.append(neuer_user)
+                save_json(USERS_FILE, users)
+                st.success(f"✅ Account '{reg_benutzername}' wurde erstellt! Du kannst dich jetzt anmelden.")
+                st.balloons()
+
+        st.divider()
+        st.caption("🔒 Neue Accounts haben standardmäßig keine Adminrechte. Ein Admin kann die Rolle jederzeit ändern.")
+
     st.stop()
 
 if "detail_artikel_id" not in st.session_state:
