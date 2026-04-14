@@ -251,8 +251,8 @@ for _k, _v in [
 # LOGIN
 # =============================================
 if not st.session_state.eingeloggt:
-    st.set_page_config(page_title="Login", page_icon="🔐", layout="centered")
-    st.title("🔐 Inventarisierungs-App")
+    st.set_page_config(page_title="Login – EVA", page_icon="🔐", layout="centered")
+    st.title("🔐 EVA Inventarisierungs-App")
     st.markdown("Bitte melde dich an oder erstelle einen neuen Account.")
     st.divider()
 
@@ -1302,8 +1302,8 @@ if hat_recht("statistiken"):
 # -----------------------------------------------
 # TAB: Export / Import
 # -----------------------------------------------
-if hat_recht("export/import"):
-    with tabs[tab_index["📤 Export/Import"]]:
+if hat_recht("export"):
+    with tabs[tab_index["📤 Export"]]:
         st.subheader("📤 Import & Export")
         imp_tab, exp_tab = st.tabs(["📥 Import", "📤 Export"])
 
@@ -1524,7 +1524,6 @@ if hat_recht("benutzerverwaltung"):
         bv1, bv2, bv3, bv4 = st.tabs(["👥 Mitglieder", "🔗 Workspace teilen",
                                 "⚙️ Workspace-Einstellungen", "🔑 Passwort ändern"])
 
-
         with bv1:
             st.markdown("### 👥 Mitglieder dieses Workspaces")
             users = load_users()
@@ -1647,30 +1646,6 @@ if hat_recht("benutzerverwaltung"):
                         st.warning("⚠️ Benutzer ist bereits Mitglied!")
             else:
                 st.info("Alle registrierten Benutzer sind bereits Mitglied.")
-          with bv4:
-              st.markdown("### 🔑 Eigenes Passwort ändern")
-              with st.form("pw_aendern_form"):
-                  pw_alt  = st.text_input("🔐 Aktuelles Passwort",        type="password")
-                  pw_neu1 = st.text_input("🔑 Neues Passwort",             type="password")
-                  pw_neu2 = st.text_input("🔑 Neues Passwort wiederholen", type="password")
-                  pw_btn  = st.form_submit_button("💾 Passwort ändern", type="primary",
-                                                  use_container_width=True)
-              if pw_btn:
-                  users_pw = load_users()
-                  user_pw_obj = next((u for u in users_pw
-                                      if u["benutzername"] == st.session_state.benutzername), None)
-                  if not user_pw_obj:
-                      st.error("❌ Benutzer nicht gefunden.")
-                  elif user_pw_obj["passwort"] != hash_passwort(pw_alt):
-                      st.error("❌ Das aktuelle Passwort ist falsch!")
-                  elif len(pw_neu1) < 6:
-                      st.error("❌ Das neue Passwort muss mindestens 6 Zeichen haben!")
-                  elif pw_neu1 != pw_neu2:
-                      st.error("❌ Die neuen Passwörter stimmen nicht überein!")
-                  else:
-                      user_pw_obj["passwort"] = hash_passwort(pw_neu1)
-                      save_json(USERS_FILE, users_pw)
-                      st.success("✅ Passwort erfolgreich geändert!")
 
         with bv3:
             st.markdown("### ⚙️ Workspace-Einstellungen")
@@ -1692,6 +1667,30 @@ if hat_recht("benutzerverwaltung"):
                 st.session_state.aktiver_workspace = all_ws[ws_idx]
                 st.success("Einstellungen gespeichert!")
                 st.rerun()
+        with bv4:
+            st.markdown("### 🔑 Eigenes Passwort ändern")
+            with st.form("pw_aendern_form"):
+                pw_alt  = st.text_input("🔐 Aktuelles Passwort",        type="password")
+                pw_neu1 = st.text_input("🔑 Neues Passwort",             type="password")
+                pw_neu2 = st.text_input("🔑 Neues Passwort wiederholen", type="password")
+                pw_btn  = st.form_submit_button("💾 Passwort ändern", type="primary",
+                                                use_container_width=True)
+            if pw_btn:
+                users_pw = load_users()
+                user_pw_obj = next((u for u in users_pw
+                                    if u["benutzername"] == st.session_state.benutzername), None)
+                if not user_pw_obj:
+                    st.error("❌ Benutzer nicht gefunden.")
+                elif user_pw_obj["passwort"] != hash_passwort(pw_alt):
+                    st.error("❌ Das aktuelle Passwort ist falsch!")
+                elif len(pw_neu1) < 6:
+                    st.error("❌ Das neue Passwort muss mindestens 6 Zeichen haben!")
+                elif pw_neu1 != pw_neu2:
+                    st.error("❌ Die neuen Passwörter stimmen nicht überein!")
+                else:
+                    user_pw_obj["passwort"] = hash_passwort(pw_neu1)
+                    save_json(USERS_FILE, users_pw)
+                    st.success("✅ Passwort erfolgreich geändert!")
 
             st.divider()
             st.markdown("#### 🗑️ Workspace löschen")
