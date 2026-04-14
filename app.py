@@ -1280,33 +1280,7 @@ if hat_recht("checkout"):
                         else:
                             st.error("❌ Bitte tippe 'LÖSCHEN' zur Bestätigung.")
 
-                            ]
-                            save_json(st.session_state.ws_files["ausleihen"],
-                                      st.session_state.ausleihen)
-                            st.success(f"✅ {len(ids_del)} Eintrag/Einträge gelöscht!")
-                            st.rerun()
-
-
-                  with st.expander("🔥 Gesamte Historie löschen"):
-                      st.error(
-                          "⚠️ **Achtung:** Dies löscht **alle** Einträge der Ausleihhistorie "
-                          "unwiderruflich."
-                      )
-                      bestaetigung = st.text_input(
-                          "Tippe LÖSCHEN zur Bestätigung", key="hist_gesamt_confirm"
-                      )
-                      if st.button("🔥 Gesamte Historie löschen", type="primary",
-                                   key="btn_hist_gesamt_del"):
-                          if bestaetigung.strip() == "LÖSCHEN":
-                              st.session_state.ausleihen = []
-                              save_json(st.session_state.ws_files["ausleihen"], [])
-                              st.success("✅ Gesamte Historie gelöscht!")
-                              st.rerun()
-                          else:
-                              st.error("❌ Bitte tippe 'LÖSCHEN' zur Bestätigung.")
-            else:
-                st.info("Keine Einträge gefunden.")
-
+                        
 # -----------------------------------------------
 # TAB: Barcode / QR-Code
 # -----------------------------------------------
