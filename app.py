@@ -1475,6 +1475,8 @@ if hat_recht("benutzerverwaltung"):
             st.markdown("### 👥 Mitglieder dieses Workspaces")
             users            = load_users()
             # FIX 1: Duplikate automatisch bereinigen
+             # KORREKT:
+              # FIX 1: Duplikate automatisch bereinigen
               mitglieder_raw = ws_aktuell.get("mitglieder", [])
               mitglieder = list(dict.fromkeys(mitglieder_raw))
               if len(mitglieder) != len(mitglieder_raw):
@@ -1483,6 +1485,7 @@ if hat_recht("benutzerverwaltung"):
                   if _i is not None:
                       _fix[_i]["mitglieder"] = mitglieder
                       save_workspaces(_fix)
+
             mitglieder_rollen = ws_aktuell.get("mitglieder_rollen", {})
             mitglieder_info  = ws_aktuell.get("mitglieder_info", {})
 
